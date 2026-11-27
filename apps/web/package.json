@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",
+    "@types/node": "^22.20.7",
     "@types/pg": "^8.23.1",
     "fake-indexeddb": "^6.2.8",
     "happy-dom": "^21.0.4",

@@ -1,6 +1,6 @@
 # Cam Notlar
 
-Apple Notes tarzı, buzlu cam (glass) arayüzlü bir not uygulaması. Hedef: Docker ile kendi sunucunda çalışan bir eşitleme sunucusu, çevrimdışı çalışan bir web uygulaması (PWA) ve yerel bir Android uygulaması.
+Apple Notes tarzı, buzlu cam (glass) arayüzlü bir not uygulaması: Docker ile kendi sunucunda çalışan bir eşitleme sunucusu, çevrimdışı çalışan bir web uygulaması (PWA) ve yerel bir Android uygulaması.
 
 ![Mimari](docs/img/mimari.png)
 
@@ -8,38 +8,83 @@ Apple Notes tarzı, buzlu cam (glass) arayüzlü bir not uygulaması. Hedef: Doc
 
 | Yol | İçerik |
 | --- | --- |
-| [`prototype/index.html`](prototype/index.html) | Çalışan arayüz prototipi: tek HTML dosyası, bağımlılık yok |
-| [`docs/PLAN.md`](docs/PLAN.md) | Sunucu, web ve Android için ayrıntılı geliştirme planı |
-| `docs/img/` | Mimari diyagramı |
+| [`packages/shared`](packages/shared) | Ortak tipler, HTML sözleşmesi (temizleyici), UUIDv7, ayar doğrulama, test örnekleri |
+| [`apps/api`](apps/api) | Fastify + PostgreSQL sunucu, eşitleme, kimlik doğrulama, worker (temizlik + yedek) |
+| [`apps/web`](apps/web) | Vite + TypeScript PWA (prototipten taşındı), IndexedDB + eşitleme motoru |
+| [`apps/android`](apps/android) | Kotlin + Jetpack Compose, Room, WorkManager |
+| [`deploy`](deploy) | `docker-compose.yml`, `Caddyfile`, `init.sh`, `backup.sh`, `restore.sh` |
+| [`prototype/index.html`](prototype/index.html) | İlk tek dosyalık arayüz prototipi (referans) |
+| [`docs/PLAN.md`](docs/PLAN.md) | Geliştirme planı; [`docs/UYGULAMA.md`](docs/UYGULAMA.md) uygulanan kararlar ve durum |
 
-## Prototipi çalıştırma
+Kural: hiçbir kaynak dosya 1000 satırı geçmez (`npm run lint:lines`, CI'da denetlenir).
 
-`prototype/index.html` dosyasını tarayıcıda açman yeterli. Ya da yerel bir sunucuyla:
+## Sunucuyu kurmak (Docker)
+
+Gerekenler: Docker + Compose, alan adının A kaydı sunucuyu göstermeli.
 
 ```bash
-cd prototype
-python3 -m http.server 8080
-# http://localhost:8080
+git clone <bu depo> camnotlar && cd camnotlar/deploy
 ```
 
-Prototipte şunlar var:
-
-- **Masaüstü:** üç cam sütun (klasörler, not listesi, editör), açılıp kapanan kenar çubuğu.
-- **Mobil:** iOS tarzı kayan ekranlar, büyük başlıklar, altta biçim araç çubuğu.
-- **Notlar:** zengin metin (başlık, kalın, italik, altı/üstü çizili, listeler, kontrol listesi), sabitleme, klasöre taşıma, Son Silinenler, arama.
-- **Ayarlar:** Otomatik / Açık / Gece / Zamanlı görünüm, saf siyah gece modu, 6 renk teması, cam yoğunluğu, yazı tipi ve boyutu, sıralama, yedekleme.
-- **Kısayollar:** `Alt+N` yeni not, `/` arama, `Ctrl+,` ayarlar.
-
-Notlar ve ayarlar şimdilik yalnızca tarayıcının `localStorage` alanında saklanır. Sunucu eşitlemesi plandaki uygulama sırasının 2. ve 3. adımında gelecek.
-
-## Planlanan yapı
-
-```
-apps/api/        Fastify + TypeScript sunucu ve worker
-apps/web/        Vite + TypeScript PWA (prototipten taşınacak)
-apps/android/    Kotlin + Jetpack Compose
-packages/shared/ ortak tipler ve HTML sözleşmesi
-deploy/          docker-compose.yml, Caddyfile, .env.example
+```bash
+./init.sh notlar.ornek.com
 ```
 
-Ayrıntılar, uygulama sırası ve açık kararlar için [docs/PLAN.md](docs/PLAN.md) dosyasına bak.
+```bash
+docker compose up -d --build
+```
+
+```bash
+docker compose exec api node dist/cli/admin.js create
+```
+
+`https://notlar.ornek.com` adresinde web uygulaması açılır; Android'de giriş ekranına aynı adres yazılır. Kayıt varsayılan olarak kapalıdır; yeni kişiler için davet kodu:
+
+```bash
+docker compose exec api node dist/cli/admin.js invite kisi@ornek.com
+```
+
+- **Yedekleme:** worker her gece 03:00'te `deploy/backups/` altına `pg_dump` alır (7 günlük + 4 haftalık). Elle yedek: `./backup.sh`. Geri yükleme: `./restore.sh 2026-11-27`.
+- **Güncelleme:** `git pull && docker compose up -d --build` (ya da `.env` içinde `IMAGE_PREFIX`/`VERSION` ile hazır imajlar: `docker compose pull && docker compose up -d`).
+- **Alan adı yoksa:** Tailscale ya da Cloudflare Tunnel ile HTTPS'i dışarıda sonlandırıp `DOMAIN=:80` kullan.
+
+## Geliştirme
+
+```bash
+npm install
+```
+
+API (yerel PostgreSQL gerekir; `DATABASE_URL` ile adres verilir):
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/camnotlar ALLOW_SIGNUP=true SECURE_COOKIES=false npm run dev -w @camnotlar/api
+```
+
+Web (Vite, `/v1` isteklerini `localhost:3000`'e aktarır):
+
+```bash
+npm run dev -w @camnotlar/web
+```
+
+Testler:
+
+```bash
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm test
+```
+
+```bash
+npm run build && cd apps/web && npx playwright test
+```
+
+Android (JDK 17+, Android SDK 35):
+
+```bash
+cd apps/android && ./gradlew :app:testDebugUnitTest :app:assembleDebug
+```
+
+## Özellikler
+
+- **Eşitleme:** her istemci önce yerel veritabanına yazar (web: IndexedDB, Android: Room), değişiklik kuyruğunu sunucuya iter, sonra son `seq`'ten sonrasını çeker. Çakışmada son yazan kazanır, üstüne yazılan sürüm "… (çakışma kopyası — Cihaz)" olarak saklanır; veri kaybolmaz. WebSocket sinyaliyle diğer cihazlar birkaç saniyede güncellenir.
+- **Web:** prototipteki görünüm birebir; giriş/kayıt, sunucusuz kullanım (sonradan hesaba taşınır), eşitleme göstergesi, cihazlar, not geçmişi (farklarla), Service Worker ile çevrimdışı açılış.
+- **Android:** web'in mobil akışıyla aynı ekranlar, tablette üç bölme, web ile aynı HTML'i üreten editör, paylaş menüsü, kısayollar, ana ekran widget'ı, biyometrik kilit, 15 dakikada bir arka plan eşitlemesi.
+- **Güvenlik:** Argon2id parolalar, 15 dk'lık EdDSA JWT + döndürülen yenileme belirteci (tekrar kullanımda oturum iptali), web'de HttpOnly çerez, Android'de Keystore şifreleme, sunucuda HTML izin listesi, sıkı CSP, giriş oran sınırı, HIBP parola kontrolü.
