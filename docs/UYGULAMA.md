@@ -10,13 +10,15 @@
 | 2. Sunucu çekirdeği + Docker | Tamam | 25 API testi gerçek PostgreSQL'e karşı (kimlik, push/pull, çakışma, yetki, geçmiş, arama, WebSocket) + 3 tohumlu eşitleme simülatörü; `docker compose up -d` ile kurulum, yedek alma ve geri yükleme elle denendi |
 | 3. Web PWA | Tamam | 8 Playwright testi: not akışı, kontrol listesi, iki sekme canlı eşitleme, çevrimdışı yazma, klasör + ayar eşitleme, sunucusuz → hesap, not geçmişi, mobil gezinme |
 | 4. Android | Tamam (cihazda elle deneme bekliyor) | JVM birim testleri (ortak fixture'larla HTML, ayarlar, UUIDv7), debug APK derleniyor |
-| 5. Not geçmişi, yedekleme, izleme | Kısmen | Geçmiş ve geri yükleme iki istemcide var; yedek/geri yükleme betikleri var. **Dosya ekleri ve Prometheus/Grafana yok** (aşağıda) |
+| 5. Ekler, not geçmişi, yedekleme, izleme | Kısmen | Ekler, geçmiş ve geri yükleme iki istemcide var; yedek/geri yükleme ekleri de kapsar. **Prometheus/Grafana yok** (aşağıda) |
+| Ek: kullanıcı adı ve yönetim sayfası | Tamam | E-posta yerine kullanıcı adı; uygulamalarda kayıt yok, `/yonetim/` sayfasından ilk kurulum ve kullanıcı yönetimi (API ve Playwright testleri) |
 
 ## Açık kararlar için seçilen varsayılanlar
 
 Plandaki "Karar verilmesi gerekenler" listesi için şu varsayılanlarla ilerlendi; hepsi sonradan değiştirilebilir.
 
-- **Tek kullanıcı / aile ölçeği:** plandaki öneriye uygun olarak Redis ve MinIO çıkarıldı; kurulum 4 servis (caddy, api, worker, db). Kayıt varsayılan kapalı, davet koduyla açılır. WebSocket yayını bellek içi (`apps/api/src/lib/hub.ts`); birden çok api kopyası gerekirse bu tek sınıf Redis pub/sub ile değiştirilir. Oran sınırı da bellek içi.
+- **Tek kullanıcı / aile ölçeği:** plandaki öneriye uygun olarak Redis ve MinIO çıkarıldı; kurulum 4 servis (caddy, api, worker, db). Ekler MinIO yerine diskte (`attachments` birimi) durur.
+- **Hesaplar:** e-posta yerine kullanıcı adı (3–32 karakter, küçük harf/rakam/`._-`). Uygulamalarda kayıt yok; hesapları yönetici `/yonetim/` sayfasından açar. Sunucu boşken aynı sayfa ilk yönetici hesabını oluşturur (davet kodları kaldırıldı). Eski sürümden gelen e-postalı hesaplar e-postalarını kullanıcı adı olarak kullanmaya devam eder. WebSocket yayını bellek içi (`apps/api/src/lib/hub.ts`); birden çok api kopyası gerekirse bu tek sınıf Redis pub/sub ile değiştirilir. Oran sınırı da bellek içi.
 - **Android yerel (Kotlin/Compose):** widget, paylaş menüsü ve kısayollar bu yüzden mümkün oldu.
 - **Uygulama adı / paket:** "Cam Notlar", `com.camnotlar.app`.
 - **Dağıtım:** imzalı APK GitHub Releases'e (CI etikette üretir); Play yayını yok.
@@ -33,7 +35,8 @@ Plandaki "Karar verilmesi gerekenler" listesi için şu varsayılanlarla ilerlen
 
 ## Eksikler / sonraki adımlar
 
-- Dosya ekleri (resim/PDF): veri modeli ve uçlar yok. Tek kullanıcı kurulumunda yerel disk birimiyle eklenmesi önerilir.
+- Ekler sunucunun JSON dışa aktarmasına (`/v1/export`) ve web'deki "yedeği panoya kopyala"ya dahil değil; sunucu yedeği (`backup.sh`) ekleri kapsar.
+- Kota yok: kullanıcı başına toplam ek alanı sınırlanmıyor, yalnızca dosya başına sınır var (yönetim sayfası kullanımı gösteriyor).
 - `/metrics` (Prometheus) ve `docker-compose.monitoring.yml`; GlitchTip.
 - Android: QR ile giriş, hızlı ayarlar kutucuğu, FCM sessiz itme (şimdilik WebSocket ön planda + WorkManager arka planda), SQLCipher seçeneği, Roborazzi ekran görüntüsü testleri.
 - Web: 5.000 not için sanal liste ve MiniSearch (şimdilik düz filtreleme; birkaç bin notta sorun yok).

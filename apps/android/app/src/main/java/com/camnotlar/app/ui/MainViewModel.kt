@@ -51,6 +51,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val prefs: StateFlow<Prefs> = repo.prefs.stateIn(viewModelScope, SharingStarted.Eagerly, Prefs())
     val pending: StateFlow<Int> = repo.pending.stateIn(viewModelScope, started, 0)
     val syncState: StateFlow<SyncState> = c.sync.state
+    val pendingFiles: StateFlow<Int> = c.attachments.observePending().stateIn(viewModelScope, started, 0)
+
+    init {
+        c.sync.onAttachmentRejected = { name, msg -> toast("“$name” yüklenemedi: $msg") }
+    }
 
     private val _toast = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val toast: SharedFlow<String> = _toast
@@ -67,6 +72,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val n = repo.newNote(folder, pinned = view == Views.PINNED, html = html)
         if (html != "<div><br></div>") repo.saveNote(n)
         return n
+    }
+
+    /** Paylaş menüsünden gelen metin ve dosyalarla not. */
+    suspend fun createNoteWith(view: String, html: String?, files: List<android.net.Uri>): NoteEntity {
+        if (files.isEmpty()) return if (html != null) createNote(view, html) else createNote(view)
+        val att = addAttachments(files)
+        return createNote(view, (html ?: "<div>Paylaşılan dosyalar</div>") + att)
     }
 
     fun saveHtml(id: String, html: String) = viewModelScope.launch {
@@ -108,6 +120,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         toast("Sürüm ${r.version} geri yüklendi")
     }
 
+    /* ---- ekler ---- */
+
+    /** Seçilen dosyaları saklar ve nota eklenecek HTML'i döner. */
+    suspend fun addAttachments(uris: List<android.net.Uri>): String {
+        val max = repo.meta("maxAttachmentBytes")?.toLongOrNull() ?: (25L * 1024 * 1024)
+        val parts = mutableListOf<String>()
+        for (u in uris) {
+            try {
+                parts += c.attachments.add(u, max)
+            } catch (e: com.camnotlar.app.data.repo.TooLargeException) {
+                toast("“${e.fileName}” en fazla ${max / 1024 / 1024} MB olabilir")
+            } catch (e: Exception) {
+                toast(e.message ?: "Dosya eklenemedi")
+            }
+        }
+        return parts.joinToString("")
+    }
+
+    suspend fun attachmentDataUrl(id: String) = c.attachments.dataUrl(id)
+    suspend fun attachmentFile(id: String) = c.attachments.ensureLocal(id)
+
     suspend fun revisions(noteId: String): Result<List<RevisionDto>> = runCatching { c.api.revisions(noteId) }
 
     /* ---- klasörler ---- */
@@ -133,26 +166,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /* ---- oturum ---- */
 
     /** Giriş/kayıt. Hata mesajı döner; başarıda null. */
-    suspend fun authenticate(kind: String, server: String, email: String, password: String, invite: String?): String? {
+    suspend fun authenticate(server: String, username: String, password: String): String? {
         return try {
-            c.api.info(server)
+            val info = c.api.info(server)
+            if (info.needsSetup) return "Bu sunucu henüz kurulmadı; önce tarayıcıda /yonetim/ sayfasından yönetici hesabını oluştur."
             c.api.setServer(server)
+            repo.setMeta("maxAttachmentBytes", info.maxAttachmentBytes.toString())
             val prev = c.session.value
             val deviceId = repo.meta("deviceId")
             val r = c.api.authenticate(
-                kind,
-                LoginRequest(email.trim(), password, deviceName = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}".take(60), deviceId = deviceId, inviteCode = invite?.ifBlank { null }),
+                "login",
+                LoginRequest(username.trim(), password, deviceName = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}".take(60), deviceId = deviceId),
             )
-            if (prev?.mode == "server" && prev.userId != r.user.id) repo.clearAll()
+            if (prev?.mode == "server" && prev.userId != r.user.id) {
+                repo.clearAll()
+                c.attachments.clear()
+            }
             repo.setMeta("deviceId", r.deviceId)
             val wasLocal = prev?.mode == "local"
             if (wasLocal) {
                 repo.setMeta("lastSeq", "0")
                 runCatching { repo.adoptServerFolders(c.api.folders()) }
             }
-            c.setSession(Session("server", r.user.id, r.user.email, c.api.baseUrl))
+            c.setSession(Session("server", r.user.id, r.user.username, c.api.baseUrl))
             c.sync.syncNow()
-            toast(if (wasLocal) "Bağlandı; bu cihazdaki notlar hesabına eşitleniyor" else "Hoş geldin, ${r.user.displayName.ifBlank { r.user.email }}")
+            toast(if (wasLocal) "Bağlandı; bu cihazdaki notlar hesabına eşitleniyor" else "Hoş geldin, ${r.user.displayName.ifBlank { r.user.username }}")
             null
         } catch (e: ApiException) {
             e.message
@@ -171,6 +209,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() = viewModelScope.launch {
         c.api.logout()
         repo.clearAll()
+        c.attachments.clear()
         c.setSession(null)
     }
 

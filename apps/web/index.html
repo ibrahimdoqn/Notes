@@ -37,6 +37,8 @@
 <symbol id="i-offline" viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.6-9.96M9.5 6.3A6 6 0 0 1 18 9a4.5 4.5 0 0 1 2.4 8.1M3 3l18 18"/></symbol>
 <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
 <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M20.5 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
 <symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
 </svg>
 
@@ -79,6 +81,9 @@
    <button class="fb" data-f="check" title="Kontrol listesi" aria-label="Kontrol listesi"><svg class="i"><use href="#i-check"/></svg></button>
    <button class="fb" data-f="insertUnorderedList" title="Madde işaretli liste" aria-label="Madde işaretli liste"><svg class="i"><use href="#i-ul"/></svg></button>
    <button class="fb" data-f="insertOrderedList" title="Numaralı liste" aria-label="Numaralı liste"><svg class="i"><use href="#i-ol"/></svg></button>
+   <span class="sep"></span>
+   <button class="fb" id="attB" title="Dosya ya da resim ekle" aria-label="Dosya ya da resim ekle"><svg class="i"><use href="#i-clip"/></svg></button>
+   <input type="file" id="attIn" multiple hidden>
   </div>
   <div class="act">
    <button class="ibtn" data-act="pin" title="Sabitle" aria-label="Sabitle"><svg class="i"><use href="#i-pin"/></svg></button>
@@ -102,6 +107,7 @@
     <div class="card">
      <div class="srow"><span id="acctMail">—<small id="acctSrv"></small></span></div>
      <button class="srow lnk" id="pwB">Parolayı değiştir</button>
+     <a class="srow lnk" id="adminB" href="/yonetim/" hidden>Sunucu yönetimi</a>
      <button class="srow lnk red" id="logoutB">Çıkış yap</button>
     </div>
     <p class="cap">Oturum açık cihazlar</p>
@@ -155,14 +161,14 @@
 <div class="scrim auth" id="auth" hidden>
  <form class="sheet authsheet" id="authF" role="dialog" aria-modal="true" aria-labelledby="authT" novalidate>
   <div class="authhead"><div class="logo" aria-hidden="true"><svg class="i"><use href="#i-notes"/></svg></div><h2 id="authT">Cam Notlar</h2><p id="authSub">Notların her cihazında, kendi sunucunda.</p></div>
-  <div class="seg authseg" id="authMode"><button type="button" class="on" data-m="login">Giriş yap</button><button type="button" data-m="register">Hesap oluştur</button></div>
-  <label class="flbl">E-posta<input class="fld" id="aEmail" type="email" autocomplete="username" required></label>
-  <label class="flbl">Parola<input class="fld" id="aPass" type="password" autocomplete="current-password" minlength="10" required></label>
-  <label class="flbl" id="aInviteL" hidden>Davet kodu<input class="fld" id="aInvite" autocomplete="off"></label>
+  <label class="flbl">Kullanıcı adı<input class="fld" id="aUser" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+  <label class="flbl">Parola<input class="fld" id="aPass" type="password" autocomplete="current-password" required></label>
+  <p class="hint center" id="aSetup" hidden>Sunucu henüz kurulmadı. <a class="lnk" href="/yonetim/">Yönetici hesabını oluştur</a></p>
   <p class="aerr" id="aErr" role="alert"></p>
   <button class="pill wide" id="aGo">Giriş yap</button>
   <button type="button" class="txtbtn center" id="aLocal">Sunucusuz, yalnızca bu cihazda kullan</button>
   <p class="hint center" id="aSrv"></p>
+  <p class="hint center">Hesabın yok mu? Sunucu yöneticisi oluşturur.</p>
  </form>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>

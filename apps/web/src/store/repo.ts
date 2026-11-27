@@ -180,12 +180,12 @@ export async function addAll(data: { folders: Folder[]; notes: Note[] }): Promis
   done();
 }
 
-export const pendingCount = () => db.outbox.count();
+export const pendingCount = async () => (await db.outbox.count()) + (await db.blobs.where('uploaded').equals(0).count());
 
 /** Çıkışta bu cihazdaki tüm yerel veriler silinir. */
 export async function clearLocal(): Promise<void> {
-  await db.transaction('rw', db.notes, db.folders, db.outbox, db.meta, async () => {
-    await Promise.all([db.notes.clear(), db.folders.clear(), db.outbox.clear(), db.meta.clear()]);
+  await db.transaction('rw', [db.notes, db.folders, db.outbox, db.meta, db.blobs], async () => {
+    await Promise.all([db.notes.clear(), db.folders.clear(), db.outbox.clear(), db.meta.clear(), db.blobs.clear()]);
   });
   S.notes = [];
   S.folders = [];

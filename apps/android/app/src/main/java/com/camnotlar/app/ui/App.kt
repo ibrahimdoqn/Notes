@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 
 /** Dışarıdan gelen istek: paylaş menüsü, kısayol ya da widget. */
 sealed interface Launch {
-    data class NewNote(val html: String? = null) : Launch
+    data class NewNote(val html: String? = null, val files: List<android.net.Uri> = emptyList()) : Launch
     data class OpenNote(val id: String) : Launch
 }
 
@@ -92,13 +92,13 @@ private fun PhoneLayout(vm: MainViewModel, launch: Launch?, onLaunchHandled: () 
     fun push(s: Screen) { stack = stack + s }
     fun pop() { if (stack.size > 1) stack = stack.dropLast(1) }
     fun currentView() = (stack.lastOrNull { it is Screen.List } as? Screen.List)?.view ?: Views.ALL
-    fun newNote(html: String? = null) = scope.launch {
-        val n = if (html != null) vm.createNote(currentView(), html) else vm.createNote(currentView())
-        push(Screen.Note(n.id, currentView(), fresh = html == null))
+    fun newNote(html: String? = null, files: List<android.net.Uri> = emptyList()) = scope.launch {
+        val n = vm.createNoteWith(currentView(), html, files)
+        push(Screen.Note(n.id, currentView(), fresh = html == null && files.isEmpty()))
     }
     LaunchedEffect(launch) {
         when (launch) {
-            is Launch.NewNote -> newNote(launch.html)
+            is Launch.NewNote -> newNote(launch.html, launch.files)
             is Launch.OpenNote -> push(Screen.Note(launch.id, currentView(), false))
             null -> return@LaunchedEffect
         }
@@ -134,14 +134,14 @@ private fun WideLayout(vm: MainViewModel, launch: Launch?, onLaunchHandled: () -
     var settings by rememberSaveable { mutableStateOf(false) }
     val folders by vm.folders.collectAsState()
     val c = Cam.colors
-    fun newNote(html: String? = null) = scope.launch {
-        val n = if (html != null) vm.createNote(view, html) else vm.createNote(view)
-        fresh = html == null
+    fun newNote(html: String? = null, files: List<android.net.Uri> = emptyList()) = scope.launch {
+        val n = vm.createNoteWith(view, html, files)
+        fresh = html == null && files.isEmpty()
         selected = n.id
     }
     LaunchedEffect(launch) {
         when (launch) {
-            is Launch.NewNote -> newNote(launch.html)
+            is Launch.NewNote -> newNote(launch.html, launch.files)
             is Launch.OpenNote -> selected = launch.id
             null -> return@LaunchedEffect
         }

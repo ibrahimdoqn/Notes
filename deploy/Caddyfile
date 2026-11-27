@@ -12,6 +12,10 @@
 	}
 
 	handle /v1/* {
+		# Ek yüklemeleri için gövde sınırı (MAX_ATTACHMENT_MB'den biraz büyük).
+		request_body {
+			max_size 64MB
+		}
 		reverse_proxy api:3000
 	}
 	handle /healthz {
@@ -22,9 +26,9 @@
 		root * /srv
 		@immutable path /assets/*
 		header @immutable Cache-Control "public, max-age=31536000, immutable"
-		@nocache path /sw.js /index.html /manifest.webmanifest /
+		@nocache path /sw.js /index.html /manifest.webmanifest / /yonetim/ /yonetim/index.html
 		header @nocache Cache-Control "no-cache"
-		try_files {path} /index.html
+		try_files {path} {path}/index.html /index.html
 		file_server
 	}
 

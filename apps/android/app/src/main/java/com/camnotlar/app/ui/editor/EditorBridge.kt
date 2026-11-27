@@ -19,12 +19,24 @@ import org.json.JSONObject
 class EditorBridge(
     private val onChange: (String) -> Unit,
     private val onState: (Set<String>) -> Unit,
+    private val onNeedAtt: (String) -> Unit = {},
+    private val onOpenAtt: (String, String) -> Unit = { _, _ -> },
 ) {
     private val main = Handler(Looper.getMainLooper())
 
     @JavascriptInterface
     fun onChange(html: String) {
         main.post { onChange.invoke(html) }
+    }
+
+    @JavascriptInterface
+    fun needAtt(id: String) {
+        main.post { onNeedAtt.invoke(id) }
+    }
+
+    @JavascriptInterface
+    fun openAtt(id: String, name: String) {
+        main.post { onOpenAtt.invoke(id, name) }
     }
 
     @JavascriptInterface
@@ -75,10 +87,13 @@ class EditorWebView(context: Context) : WebView(context) {
     /** Editördeki güncel HTML'i (bekleyen gecikmeli kayıt beklemeden) okur. */
     fun current(cb: (String) -> Unit) {
         if (!ready) return cb("")
-        evaluateJavascript("document.getElementById('ed').innerHTML") { raw ->
+        evaluateJavascript("CamEditor.html()") { raw ->
             cb(runCatching { org.json.JSONArray("[$raw]").getString(0) }.getOrDefault(""))
         }
     }
+
+    fun insert(html: String) = js("CamEditor.insert(${JSONObject.quote(html)})")
+    fun setAtt(id: String, url: String?) = js("CamEditor.setAtt(${JSONObject.quote(id)}, ${if (url == null) "null" else JSONObject.quote(url)})")
 
     fun setStamp(s: String) = js("CamEditor.setStamp(${JSONObject.quote(s)})")
 }

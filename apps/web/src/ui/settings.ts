@@ -39,7 +39,8 @@ function renderSettings(): void {
     ? 'Notların bu cihazda da saklanır; çevrimdışıyken yazdıkların bağlantı gelince eşitlenir. Kısayollar: Alt+N yeni not, / arama, Ctrl+, ayarlar.'
     : 'Notlar ve ayarlar yalnızca bu tarayıcıda saklanır. Kısayollar: Alt+N yeni not, / arama, Ctrl+, ayarlar.';
   if (server) {
-    $('#acctMail').innerHTML = `${esc(session?.email ?? '')}<small id="acctSrv">${esc(location.host)}</small>`;
+    $('#acctMail').innerHTML = `${esc(session?.username ?? '')}<small id="acctSrv">${esc(location.host)}</small>`;
+    $('#adminB').hidden = !session?.isAdmin;
   }
 }
 

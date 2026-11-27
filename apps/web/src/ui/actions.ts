@@ -3,7 +3,8 @@ import { isBlankHtml } from '@camnotlar/shared';
 import { $, mq } from '../lib/dom.ts';
 import { caretEnd } from '../editor/caret.ts';
 import { flushSave } from '../editor/editor.ts';
-import { cur, P, S, sortedFolders, ui, vname, type LocalNote } from '../state.ts';
+import { cur, P, S, session, sortedFolders, ui, vname, type LocalNote } from '../state.ts';
+import { syncNow } from '../sync/engine.ts';
 import { deleteFolder, deleteNoteForever, makeFolder, newNote as createNote, saveFolder, saveNote, savePrefs } from '../store/repo.ts';
 import { ask, toast } from './dialogs.ts';
 import { isDark } from './prefs.ts';
@@ -24,6 +25,8 @@ async function dropEmpty() {
 }
 
 async function ensureFolder(): Promise<string> {
+  // Sunucu oturumunda klasörler henüz çekilmediyse önce eşitle; yoksa ikinci bir "Notlar" oluşur.
+  if (!S.folders.length && session?.mode === 'server') await syncNow().catch(() => {});
   if (!S.folders.length) {
     const f = makeFolder('Notlar');
     await saveFolder(f);

@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -32,8 +34,8 @@ export default defineConfig({
       port: API_PORT,
       reuseExistingServer: false,
       env: {
-        DATABASE_URL: DB, PORT: String(API_PORT), HOST: '127.0.0.1', ALLOW_SIGNUP: 'true', HIBP_CHECK: 'false',
-        SECURE_COOKIES: 'false', LOG_LEVEL: 'warn',
+        DATABASE_URL: DB, PORT: String(API_PORT), HOST: '127.0.0.1', HIBP_CHECK: 'false',
+        SECURE_COOKIES: 'false', LOG_LEVEL: 'warn', ATTACHMENTS_DIR: join(tmpdir(), 'camnotlar-e2e-att'), MAX_ATTACHMENT_MB: '5',
       },
     },
     {

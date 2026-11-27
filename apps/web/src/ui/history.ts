@@ -7,6 +7,7 @@ import { fLong } from '../lib/format.ts';
 import { ui, type LocalNote } from '../state.ts';
 import { saveNote } from '../store/repo.ts';
 import { flushSave } from '../editor/editor.ts';
+import { hydrate } from '../lib/attachments.ts';
 import { toast } from './dialogs.ts';
 import { render, renderEditor } from './render.ts';
 
@@ -55,7 +56,10 @@ export async function openHistory(n: LocalNote): Promise<void> {
     const older = revs[sel + 1];
     if (diffT.checked && older) {
       prev.innerHTML = `<p class="hlegend"><span><ins>eklenen</ins></span><span><del>silinen</del></span><span>önceki sürüme göre</span></p><div class="ed">${diffHtml(wordDiff(htmlToPlain(older.html), htmlToPlain(r.html)))}</div>`;
-    } else prev.innerHTML = `<div class="ed">${sanitizeNoteHtml(r.html)}</div>`;
+    } else {
+      prev.innerHTML = `<div class="ed">${sanitizeNoteHtml(r.html)}</div>`;
+      hydrate(prev);
+    }
     restoreB.disabled = sel === 0 || r.html === n.html;
   };
   list.addEventListener('click', (e) => {

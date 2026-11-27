@@ -15,7 +15,7 @@ function serviceWorker(): Plugin {
       const pub = readdirSync(join(import.meta.dirname, 'public'), { recursive: true, withFileTypes: true })
         .filter((d) => d.isFile())
         .map((d) => `/${join(d.parentPath ?? (d as unknown as { path: string }).path, d.name).split('/public/')[1]}`);
-      const files = ['/', '/index.html', ...Object.keys(bundle).map((f) => `/${f}`), ...pub].filter((f) => !f.endsWith('.map'));
+      const files = ['/', '/index.html', '/yonetim/', ...Object.keys(bundle).map((f) => `/${f}`), ...pub].filter((f) => !f.endsWith('.map'));
       const version = createHash('sha256').update(files.join('|') + Object.values(bundle).map((b) => ('code' in b ? b.code : String(b.source))).join('')).digest('hex').slice(0, 12);
       const tpl = readFileSync(join(import.meta.dirname, 'src/sw-template.js'), 'utf8');
       this.emitFile({
@@ -34,6 +34,11 @@ export default defineConfig({
     proxy: { '/v1': { target: API, changeOrigin: true, ws: true } },
   },
   preview: { port: 4173, proxy: { '/v1': { target: API, changeOrigin: true, ws: true } } },
-  build: { target: 'es2022', sourcemap: true },
+  build: {
+    target: 'es2022',
+    sourcemap: true,
+    // İki sayfa: notlar uygulaması (/) ve sunucu yönetimi (/yonetim/).
+    rollupOptions: { input: { main: join(import.meta.dirname, 'index.html'), yonetim: join(import.meta.dirname, 'yonetim/index.html') } },
+  },
   test: { environment: 'happy-dom', include: ['test/**/*.test.ts'] },
 });

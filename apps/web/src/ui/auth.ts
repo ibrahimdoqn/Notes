@@ -1,4 +1,7 @@
-/** Giriş / kayıt ekranı, sunucusuz kullanım, çıkış ve parola değiştirme akışları. */
+/**
+ * Giriş ekranı, sunucusuz kullanım, çıkış ve parola değiştirme akışları.
+ * Hesaplar uygulamadan açılmaz; sunucu yöneticisi /yonetim/ sayfasından oluşturur.
+ */
 import { MIN_PASSWORD, type AuthResponse, type Folder } from '@camnotlar/shared';
 import * as client from '../api/client.ts';
 import { $, $$ } from '../lib/dom.ts';
@@ -13,8 +16,6 @@ import { ask, toast } from './dialogs.ts';
 import { applyPrefs } from './prefs.ts';
 import { render } from './render.ts';
 
-let mode: 'login' | 'register' = 'login';
-let allowSignup = true;
 
 const saveSession = async (s: Session) => {
   setSession(s);
@@ -36,15 +37,6 @@ export async function authLost(msg = 'Oturumun sona erdi; yeniden giriş yap.'):
   showAuth(false, msg);
 }
 
-function setMode(m: 'login' | 'register') {
-  mode = m;
-  for (const b of $$('#authMode button')) b.classList.toggle('on', b.dataset.m === m);
-  $('#aGo').textContent = m === 'login' ? 'Giriş yap' : 'Hesap oluştur';
-  ($('#aPass') as HTMLInputElement).autocomplete = m === 'login' ? 'current-password' : 'new-password';
-  $('#aInviteL').hidden = m === 'login' || allowSignup;
-  $('#aErr').textContent = '';
-}
-
 export function showAuth(fromLocal: boolean, message = ''): void {
   $('#auth').hidden = false;
   $('#aLocal').hidden = fromLocal;
@@ -52,19 +44,20 @@ export function showAuth(fromLocal: boolean, message = ''): void {
   $('#authSub').textContent = fromLocal
     ? 'Bu cihazdaki notların hesabına taşınır ve tüm cihazlarında eşitlenir.'
     : 'Notların her cihazında, kendi sunucunda.';
-  if (session?.email) ($('#aEmail') as HTMLInputElement).value = session.email;
+  if (session?.username) ($('#aUser') as HTMLInputElement).value = session.username;
   void client.info().then(
     (i) => {
-      allowSignup = i.allowSignup;
-      $('#aSrv').textContent = `Sunucu: ${location.host}${i.allowSignup ? '' : ' · kayıt davetle'}`;
-      $('#aGo').removeAttribute('disabled');
-      setMode(mode);
+      $('#aSetup').hidden = !i.needsSetup;
+      $('#aSrv').textContent = `Sunucu: ${location.host}`;
     },
     () => {
       $('#aSrv').textContent = 'Sunucuya ulaşılamadı. Notlarını yine de bu cihazda kullanabilirsin.';
     },
   );
-  setTimeout(() => $('#aEmail').focus(), 60);
+  // Kullanıcı bu arada bir alana yazmaya başladıysa odağı çalma.
+  setTimeout(() => {
+    if (!$('#auth').contains(document.activeElement)) $('#aUser').focus();
+  }, 60);
 }
 const hideAuth = () => {
   $('#auth').hidden = true;
@@ -98,37 +91,34 @@ async function onAuthed(r: AuthResponse): Promise<void> {
   if (prev?.mode === 'server' && prev.userId !== r.user.id) await clearLocal();
   // Sunucusuz kullanılmış (ya da prototipten veri taşınmış) cihaz: yerel notlar hesaba katılır.
   const wasLocal = prev?.mode === 'local' || (!prev && (S.notes.length > 0 || S.folders.length > 0));
-  await saveSession({ mode: 'server', userId: r.user.id, email: r.user.email, deviceId: r.deviceId });
+  await saveSession({ mode: 'server', userId: r.user.id, username: r.user.username, isAdmin: r.user.isAdmin, deviceId: r.deviceId });
   if (wasLocal) {
     await setMeta('lastSeq', 0);
     await adoptServerFolders().catch(() => {});
   }
   clearLegacy();
   await loadAll();
+  // Önce sunucudaki veriler gelsin (ör. varsayılan "Notlar" klasörü), sonra arayüz açılsın.
+  startServer();
+  await syncNow();
   hideAuth();
   applyPrefs();
   render();
-  startServer();
-  await syncNow();
-  toast(wasLocal ? 'Bağlandı; bu cihazdaki notlar hesabına eşitleniyor' : `Hoş geldin, ${r.user.displayName || r.user.email}`);
+  toast(wasLocal ? 'Bağlandı; bu cihazdaki notlar hesabına eşitleniyor' : `Hoş geldin, ${r.user.displayName || r.user.username}`);
 }
 
 async function submit(e: Event) {
   e.preventDefault();
-  const email = ($('#aEmail') as HTMLInputElement).value.trim();
+  const username = ($('#aUser') as HTMLInputElement).value.trim();
   const password = ($('#aPass') as HTMLInputElement).value;
-  const inviteCode = ($('#aInvite') as HTMLInputElement).value.trim();
   const err = $('#aErr');
-  if (!email || !password) return void (err.textContent = 'E-posta ve parola gerekli.');
-  if (mode === 'register' && [...password].length < MIN_PASSWORD) {
-    return void (err.textContent = `Parola en az ${MIN_PASSWORD} karakter olmalı.`);
-  }
+  if (!username || !password) return void (err.textContent = 'Kullanıcı adı ve parola gerekli.');
   const go = $('#aGo') as HTMLButtonElement;
   go.disabled = true;
   err.textContent = '';
   try {
     const deviceId = await getMeta<string | undefined>('deviceId', undefined);
-    const r = await client.authenticate(mode, { email, password, inviteCode: inviteCode || undefined, deviceName: client.deviceName(), deviceId });
+    const r = await client.authenticate('login', { username, password, deviceName: client.deviceName(), deviceId });
     await setMeta('deviceId', r.deviceId);
     ($('#aPass') as HTMLInputElement).value = '';
     await onAuthed(r);
@@ -191,10 +181,6 @@ export async function changePasswordFlow(): Promise<void> {
 
 export function initAuth(): void {
   $('#authF').addEventListener('submit', (e) => void submit(e));
-  $('#authMode').addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-m]');
-    if (b) setMode(b.dataset.m as 'login' | 'register');
-  });
   $('#aLocal').addEventListener('click', () => void useLocal());
   client.setAuthLostHandler(() => void authLost());
   let warned = false;

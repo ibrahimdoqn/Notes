@@ -1,8 +1,10 @@
 /** Kenar çubuğu, not listesi ve editör çizimi (prototipteki görünüm birebir korunur). */
+import { sanitizeNoteHtml } from '@camnotlar/shared';
 import { $, esc, ico, mq } from '../lib/dom.ts';
 import { fLong, group, short } from '../lib/format.ts';
 import { cur, count, dkey, P, S, session, sortedFolders, ui, visible, vname, type LocalNote, type View } from '../state.ts';
 import { restoreCaret, saveCaret } from '../editor/caret.ts';
+import { hydrate } from '../lib/attachments.ts';
 
 const app = () => $('#app');
 const ed = () => $('#ed');
@@ -70,11 +72,13 @@ export function renderEditor(force = false): void {
   }
   if (force || ui.loaded !== n.id) {
     e.innerHTML = n.html;
+    hydrate(e);
     ui.loaded = n.id;
     $('#sc').scrollTop = 0;
-  } else if (ui.remoteHtml != null && ui.remoteHtml === n.html && e.innerHTML !== n.html) {
+  } else if (ui.remoteHtml != null && ui.remoteHtml === n.html && sanitizeNoteHtml(e.innerHTML) !== n.html) {
     const c = document.activeElement === e ? saveCaret(e) : null;
     e.innerHTML = n.html;
+    hydrate(e);
     if (c) restoreCaret(e, c);
   }
   ui.remoteHtml = null;

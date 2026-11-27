@@ -97,3 +97,24 @@ interface MetaDao {
     @Query("DELETE FROM meta")
     suspend fun clear()
 }
+
+@Dao
+interface AttachmentDao {
+    @Query("SELECT * FROM attachments WHERE id = :id")
+    suspend fun get(id: String): AttachmentEntity?
+
+    @Query("SELECT * FROM attachments WHERE uploaded = 0 ORDER BY createdAt")
+    suspend fun pending(): List<AttachmentEntity>
+
+    @Query("SELECT COUNT(*) FROM attachments WHERE uploaded = 0")
+    fun observePending(): Flow<Int>
+
+    @Upsert
+    suspend fun upsert(a: AttachmentEntity)
+
+    @Query("UPDATE attachments SET uploaded = 1 WHERE id = :id")
+    suspend fun markUploaded(id: String)
+
+    @Query("DELETE FROM attachments")
+    suspend fun clear()
+}

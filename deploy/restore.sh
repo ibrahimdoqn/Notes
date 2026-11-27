@@ -14,4 +14,8 @@ read -r ok
 docker compose stop api worker
 docker compose exec -T db pg_restore --clean --if-exists --no-owner -U camnotlar -d camnotlar < "$file"
 docker compose start api worker
+# Ek dosyaları: yedekteki kopyalar eksik olanların yerine konur (mevcutlar korunur).
+if [ -d backups/attachments ]; then
+  docker compose exec -T worker sh -c 'cp -Rn /backups/attachments/. /data/attachments/ 2>/dev/null || true'
+fi
 echo "Geri yükleme tamam."

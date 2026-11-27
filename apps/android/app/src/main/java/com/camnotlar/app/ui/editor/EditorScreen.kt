@@ -2,7 +2,15 @@ package com.camnotlar.app.ui.editor
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -78,12 +86,26 @@ fun EditorScreen(vm: MainViewModel, noteId: String, backLabel: String, showBack:
     var history by remember { mutableStateOf(false) }
     var lastSent by remember { mutableStateOf<String?>(null) }
 
+    val scope = rememberCoroutineScope()
+    val webRef = remember { arrayOfNulls<EditorWebView>(1) }
     val web = remember {
         EditorWebView(ctx).apply {
-            setup(EditorBridge(onChange = { html ->
-                lastSent = html
-                vm.saveHtml(noteId, html)
-            }, onState = { active = it }))
+            setup(EditorBridge(
+                onChange = { html ->
+                    lastSent = html
+                    vm.saveHtml(noteId, html)
+                },
+                onState = { active = it },
+                // Ek resmi: yerel kopya ya da sunucudan indirilen dosya data: adresi olarak verilir.
+                onNeedAtt = { id -> scope.launch { webRef[0]?.setAtt(id, vm.attachmentDataUrl(id)) } },
+                onOpenAtt = { id, name -> scope.launch { openAttachment(ctx, vm, id, name) } },
+            ))
+        }.also { webRef[0] = it }
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) scope.launch {
+            val html = vm.addAttachments(uris)
+            if (html.isNotEmpty()) web.insert(html)
         }
     }
     DisposableEffect(Unit) {
@@ -148,7 +170,7 @@ fun EditorScreen(vm: MainViewModel, noteId: String, backLabel: String, showBack:
         Box(Modifier.weight(1f).fillMaxWidth()) {
             AndroidView({ web }, Modifier.fillMaxSize())
         }
-        if (n?.trashedAt == null) FormatBar(active) { web.fmt(it) }
+        if (n?.trashedAt == null) FormatBar(active, onAttach = { picker.launch(arrayOf("*/*")) }) { web.fmt(it) }
     }
 
     if (move && n != null) ChoiceDialog("Klasöre taşı", folders.map { it.id to it.name }, n.folderId) { id ->
@@ -166,7 +188,7 @@ fun EditorScreen(vm: MainViewModel, noteId: String, backLabel: String, showBack:
 }
 
 @Composable
-private fun FormatBar(active: Set<String>, onFmt: (String) -> Unit) {
+private fun FormatBar(active: Set<String>, onAttach: () -> Unit, onFmt: (String) -> Unit) {
     val c = Cam.colors
     Row(
         Modifier.fillMaxWidth().background(c.glass2).navigationBarsPadding().horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp, vertical = 6.dp),
@@ -193,5 +215,22 @@ private fun FormatBar(active: Set<String>, onFmt: (String) -> Unit) {
         I("check", Icons.Outlined.CheckCircle, "Kontrol listesi")
         I("insertUnorderedList", Icons.AutoMirrored.Rounded.FormatListBulleted, "Madde işaretli liste")
         I("insertOrderedList", Icons.Rounded.FormatListNumbered, "Numaralı liste")
+        Spacer(Modifier.width(1.dp).height(20.dp).background(c.line))
+        IconBtn(Icons.Rounded.AttachFile, "Dosya ya da resim ekle", tint = c.ink, onClick = onAttach)
+    }
+}
+
+/** Dosya ekini sistemdeki uygun uygulamayla açar (FileProvider üzerinden). */
+private suspend fun openAttachment(ctx: Context, vm: MainViewModel, id: String, name: String) {
+    val (file, row) = vm.attachmentFile(id) ?: run {
+        vm.toast("Ek indirilemedi (çevrimdışı olabilirsin).")
+        return
+    }
+    val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.files", file)
+    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uri, row.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    try {
+        ctx.startActivity(Intent.createChooser(intent, name))
+    } catch (e: ActivityNotFoundException) {
+        vm.toast("Bu dosyayı açacak uygulama yok.")
     }
 }

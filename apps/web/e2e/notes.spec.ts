@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { listTitles, login, register, writeNote } from './helpers.ts';
+import { BASE, createUser, listTitles, login, PASSWORD, register, writeNote } from './helpers.ts';
 
 test.describe('notlar ve eşitleme', () => {
   test('not oluştur, düzenle, sabitle, sil ve geri al', async ({ page }) => {
@@ -40,8 +40,8 @@ test.describe('notlar ve eşitleme', () => {
     const ctxB = await browser.newContext();
     const a = await ctxA.newPage();
     const b = await ctxB.newPage();
-    const email = await register(a);
-    await login(b, email);
+    const user = await register(a);
+    await login(b, user);
     await writeNote(a, ['Canlı eşitleme', 'ikinci cihazda görünmeli']);
     // Yazmayı bıraktıktan ~2 sn sonra push, WebSocket sinyaliyle diğer cihaz çeker.
     await expect(listTitles(b)).toContainText(['Canlı eşitleme'], { timeout: 10_000 });
@@ -54,7 +54,7 @@ test.describe('notlar ve eşitleme', () => {
   test('çevrimdışı yazılan not bağlantı gelince eşitlenir', async ({ browser }) => {
     const ctxA = await browser.newContext();
     const a = await ctxA.newPage();
-    const email = await register(a);
+    const user = await register(a);
     await ctxA.setOffline(true);
     await a.evaluate(() => dispatchEvent(new Event('offline')));
     await writeNote(a, ['Uçakta yazıldı']);
@@ -68,7 +68,7 @@ test.describe('notlar ve eşitleme', () => {
 
     const ctxB = await browser.newContext();
     const b = await ctxB.newPage();
-    await login(b, email);
+    await login(b, user);
     await expect(listTitles(b)).toContainText(['Uçakta yazıldı']);
     await ctxA.close();
     await ctxB.close();
@@ -79,8 +79,8 @@ test.describe('notlar ve eşitleme', () => {
     const ctxB = await browser.newContext();
     const a = await ctxA.newPage();
     const b = await ctxB.newPage();
-    const email = await register(a);
-    await login(b, email);
+    const user = await register(a);
+    await login(b, user);
 
     await a.click('#newF');
     await a.fill('.dlg .fld', 'İş');
@@ -106,9 +106,8 @@ test.describe('notlar ve eşitleme', () => {
     await expect(page.locator('#sync')).toBeHidden();
     await page.keyboard.press('Control+Comma');
     await page.click('#connectB');
-    await page.locator('#authMode [data-m=register]').click();
-    await page.fill('#aEmail', `yerel${Date.now()}@ornek.com`);
-    await page.fill('#aPass', 'cok-gizli-parola-1');
+    await page.fill('#aUser', await createUser(BASE));
+    await page.fill('#aPass', PASSWORD);
     await page.click('#aGo');
     await expect(page.locator('#sync')).toContainText('Eşitlendi', { timeout: 10_000 });
     // Yerel "Notlar" klasörü sunucudakiyle birleşir; tek "Notlar" kalır.

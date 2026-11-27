@@ -102,7 +102,7 @@ fun SettingsScreen(vm: MainViewModel, onConnect: () -> Unit, onClose: () -> Unit
             GroupCard {
                 if (server) {
                     Column(Modifier.padding(14.dp)) {
-                        Text(session?.email ?: "", color = c.ink, fontSize = 16.sp)
+                        Text(session?.username ?: "", color = c.ink, fontSize = 16.sp)
                         Text(session?.server?.removePrefix("https://") ?: "", color = c.sub, fontSize = 13.sp)
                     }
                     Divider()

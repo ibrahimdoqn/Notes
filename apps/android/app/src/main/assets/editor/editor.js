@@ -1,15 +1,39 @@
 /*
  * Android editör köprüsü. Web'deki editor/commands.ts ve editor/editor.ts ile aynı davranış:
  * aynı HTML alt kümesini üretir (div, h2, b, i, u, s, ul, ol, li, ul.check, li.done).
- * Android → JS: CamEditor.load / theme / fmt / focusEnd
- * JS → Android: Android.onChange(html), Android.onState(json)
+ * Android → JS: CamEditor.load / theme / fmt / focusEnd / insert / setAtt / html
+ * JS → Android: Android.onChange(html), Android.onState(json), Android.needAtt(id), Android.openAtt(id, ad)
+ *
+ * Ekler: <img class="att" data-att="ID"> ve <span class="file" data-att="ID">ad</span>.
+ * Görüntülemek için verilen src ve contenteditable öznitelikleri kaydedilen HTML'e girmez.
  */
 (function () {
   'use strict';
   var ed = document.getElementById('ed');
   var stamp = document.getElementById('stamp');
   var timer = null;
-  var bridge = window.Android || { onChange: function () {}, onState: function () {} };
+  var bridge = window.Android || { onChange: function () {}, onState: function () {}, needAtt: function () {}, openAtt: function () {} };
+  var attUrls = {};
+
+  /** Kaydedilecek HTML: görüntüleme için eklenen öznitelikler çıkarılır. */
+  function cleanHtml() {
+    var c = ed.cloneNode(true);
+    c.querySelectorAll('img.att').forEach(function (i) { i.removeAttribute('src'); i.classList.remove('loading', 'missing'); });
+    c.querySelectorAll('span.file').forEach(function (f) { f.removeAttribute('contenteditable'); });
+    return c.innerHTML;
+  }
+
+  /** Eklere adres verir (Android dosyayı bulup setAtt ile döner). */
+  function hydrate() {
+    ed.querySelectorAll('img.att[data-att]').forEach(function (img) {
+      if (img.getAttribute('src')) return;
+      var id = img.getAttribute('data-att');
+      if (attUrls[id]) { img.src = attUrls[id]; return; }
+      img.classList.add('loading');
+      bridge.needAtt(id);
+    });
+    ed.querySelectorAll('span.file[data-att]').forEach(function (f) { f.contentEditable = 'false'; });
+  }
 
   function exec(cmd, val) { try { return document.execCommand(cmd, false, val); } catch (e) { return false; } }
   exec('defaultParagraphSeparator', 'div');
@@ -27,9 +51,9 @@
 
   function changed() {
     clearTimeout(timer);
-    timer = setTimeout(function () { bridge.onChange(ed.innerHTML); }, 300);
+    timer = setTimeout(function () { bridge.onChange(cleanHtml()); }, 300);
   }
-  function flush() { clearTimeout(timer); bridge.onChange(ed.innerHTML); }
+  function flush() { clearTimeout(timer); bridge.onChange(cleanHtml()); }
 
   function state() {
     var ck = !!inCheck();
@@ -72,6 +96,8 @@
   ed.addEventListener('blur', flush);
   document.addEventListener('selectionchange', state);
   ed.addEventListener('click', function (e) {
+    var file = e.target.closest && e.target.closest('span.file[data-att]');
+    if (file) { bridge.openAtt(file.getAttribute('data-att'), file.textContent || 'dosya'); return; }
     var li = e.target.closest && e.target.closest('ul.check>li');
     if (!li || ed.contentEditable !== 'true') return;
     if (e.clientX - li.getBoundingClientRect().left < 30) {
@@ -92,7 +118,7 @@
 
   window.CamEditor = {
     load: function (html, editable, stampText) {
-      if (ed.innerHTML !== html) ed.innerHTML = html;
+      if (cleanHtml() !== html) { ed.innerHTML = html; hydrate(); }
       ed.contentEditable = editable ? 'true' : 'false';
       stamp.textContent = stampText || '';
     },
@@ -102,6 +128,20 @@
       Object.keys(t).forEach(function (k) { r.setProperty('--' + k, t[k]); });
     },
     fmt: fmt,
+    html: cleanHtml,
+    insert: function (html) {
+      ed.focus();
+      exec('insertHTML', html);
+      hydrate();
+      changed();
+    },
+    setAtt: function (id, url) {
+      if (url) attUrls[id] = url;
+      ed.querySelectorAll('img.att[data-att="' + id + '"]').forEach(function (img) {
+        img.classList.remove('loading');
+        if (url) img.src = url; else img.classList.add('missing');
+      });
+    },
     flush: flush,
     focusEnd: function () {
       ed.focus();

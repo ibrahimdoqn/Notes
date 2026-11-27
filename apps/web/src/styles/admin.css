@@ -1,0 +1,35 @@
+/* sunucu yönetimi sayfası (/yonetim/) */
+body{overflow:auto}
+.adm{position:relative;z-index:1;min-height:100dvh;display:grid;place-items:start center;padding:24px 16px}
+.adm-card{width:min(420px,100%);padding:26px 22px 14px;margin-top:8vh}
+.adm-card form{display:flex;flex-direction:column;gap:4px}
+.logo{font-size:30px}
+.adm-panel{width:min(980px,100%);max-height:none}
+.adm-me{color:var(--sub);font-size:13px;margin-right:8px}
+.adm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 16px 0}
+.adm-stats div{padding:12px 14px;border-radius:14px;background:light-dark(rgba(255,255,255,.62),rgba(255,255,255,.06));border:1px solid var(--line)}
+.adm-stats b{display:block;font-size:22px;letter-spacing:-.02em}.adm-stats span{color:var(--sub);font-size:12px}
+.adm-new{padding:10px 12px 12px}
+.adm-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.adm-pw{display:flex;gap:6px;align-items:center}.adm-pw .fld{flex:1}
+.adm-check{min-height:44px;margin-bottom:4px}
+.adm-new .pill{align-self:flex-start}
+.utable{width:100%;border-collapse:collapse;font-size:14px}
+.utable th{text-align:left;font-size:12px;font-weight:600;color:var(--sub);padding:8px 10px}
+.utable td{padding:10px;border-top:1px solid var(--line);vertical-align:middle}
+.utable td small{display:block;color:var(--sub);font-size:12px}
+.badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--sel);color:var(--accInk);font-size:11px;font-weight:600}
+.uact{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.uact button{padding:6px 9px;border-radius:9px;color:var(--accInk);font-size:13px;font-weight:500}
+.uact button:hover{background:var(--line)}.uact .red{color:var(--red)}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cred{font-family:ui-monospace,Menlo,monospace;background:var(--line);padding:8px 10px;border-radius:10px;user-select:all;text-align:left;white-space:pre}
+@media(max-width:760px){
+ .adm{padding:0}.adm-card{margin-top:0;min-height:100dvh;border-radius:0}
+ .adm-panel{border-radius:0}.adm-row{grid-template-columns:1fr}
+ .utable thead{display:none}.utable tr{display:grid;grid-template-columns:1fr auto;padding:6px 0;border-top:1px solid var(--line)}
+ .utable td{border:0;padding:4px 10px}.utable td.hide-m{display:none}.uact{grid-column:1/-1;justify-content:flex-start}
+}
+.adm .sh a.txtbtn{text-decoration:none}
+.adm-new .pill{margin-top:4px}
+.adm .hint{margin:12px 22px}

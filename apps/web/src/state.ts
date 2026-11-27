@@ -15,7 +15,8 @@ export type MobScreen = 'folders' | 'list' | 'note';
 export interface Session {
   mode: 'server' | 'local';
   userId?: string;
-  email?: string;
+  username?: string;
+  isAdmin?: boolean;
   deviceId?: string;
 }
 

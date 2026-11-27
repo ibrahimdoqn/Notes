@@ -10,6 +10,8 @@ import { api, HttpError } from '../api/client.ts';
 import { session } from '../state.ts';
 import { getMeta } from '../store/db.ts';
 import { ackPushed, applyRemote, outboxBatch, pendingCount } from '../store/repo.ts';
+import { uploadPending } from '../lib/attachments.ts';
+import { toast } from '../ui/dialogs.ts';
 
 export type SyncState =
   | { s: 'local' }
@@ -105,6 +107,8 @@ export async function syncNow(): Promise<void> {
   setState({ s: 'syncing' });
   try {
     const ran = await withLock(async () => {
+      // Önce ek dosyaları: not, sunucuya ulaştığında eki de hazır olsun.
+      await uploadPending((name, msg) => toast(`“${name}” yüklenemedi: ${msg}`));
       await pushAll();
       await pullAll();
     });

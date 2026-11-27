@@ -26,14 +26,15 @@ self.addEventListener('fetch', (e) => {
   // API ve başka kökenler asla önbelleğe alınmaz.
   if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/v1/')) return;
   if (req.mode === 'navigate') {
-    // Uygulama kabuğu: ağ 3 sn içinde yanıt vermezse önbellekten açılır.
+    // Uygulama kabuğu: ağ 3 sn içinde yanıt vermezse önbellekten açılır. Yönetim sayfası ayrı kabuktur.
+    const shell = url.pathname.startsWith('/yonetim') ? '/yonetim/index.html' : '/index.html';
     e.respondWith((async () => {
       try {
         const res = await Promise.race([fetch(req), timeout(3000)]);
-        if (res.ok) (await caches.open(CACHE)).put('/index.html', res.clone());
+        if (res.ok) (await caches.open(CACHE)).put(shell, res.clone());
         return res;
       } catch {
-        return (await caches.match('/index.html')) || Response.error();
+        return (await caches.match(shell)) || Response.error();
       }
     })());
     return;

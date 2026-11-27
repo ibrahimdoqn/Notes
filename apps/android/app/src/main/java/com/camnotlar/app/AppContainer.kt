@@ -5,6 +5,7 @@ import com.camnotlar.app.data.db.AppDatabase
 import com.camnotlar.app.data.net.ApiClient
 import com.camnotlar.app.data.net.SecureStore
 import com.camnotlar.app.data.prefs.LocalSettings
+import com.camnotlar.app.data.repo.Attachments
 import com.camnotlar.app.data.repo.NotesRepository
 import com.camnotlar.app.data.sync.LiveSocket
 import com.camnotlar.app.data.sync.SyncEngine
@@ -17,7 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /** Oturum durumu: hiç seçilmemiş, sunucusuz ya da sunucuya bağlı. */
-data class Session(val mode: String, val userId: String? = null, val email: String? = null, val server: String? = null)
+data class Session(val mode: String, val userId: String? = null, val username: String? = null, val server: String? = null)
 
 /**
  * Elle bağımlılık enjeksiyonu: tek bir kapsayıcı, uygulama ömrü boyunca yaşar.
@@ -31,7 +32,8 @@ class AppContainer(private val context: Context) {
     val repo = NotesRepository(db, api.json)
     private val _session = MutableStateFlow(loadSession())
     val session: StateFlow<Session?> = _session
-    val sync = SyncEngine(api, repo, scope) { _session.value?.userId }
+    val attachments = Attachments(context, db, api)
+    val sync = SyncEngine(api, repo, attachments, scope) { _session.value?.userId }
     private var foreground = false
 
     val socket = LiveSocket(api, scope, onChanged = { sync.schedule(150) }, onLogout = { scope.launch { authLost() } })
@@ -57,13 +59,13 @@ class AppContainer(private val context: Context) {
 
     private fun loadSession(): Session? {
         val mode = store.get("mode") ?: return null
-        return Session(mode, store.get("userId"), store.get("email"), store.get("server"))
+        return Session(mode, store.get("userId"), store.get("username"), store.get("server"))
     }
 
     fun setSession(s: Session?) {
         store.put("mode", s?.mode)
         store.put("userId", s?.userId)
-        store.put("email", s?.email)
+        store.put("username", s?.username)
         _session.value = s
         if (s?.mode == "server") {
             _authLost.value = false

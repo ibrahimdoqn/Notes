@@ -47,3 +47,14 @@ data class MetaEntity(
     @PrimaryKey val key: String,
     val value: String,
 )
+
+/** Not eki: dosya cihazda files/attachments/<id> altında; uploaded=false ise sunucuya yüklenmeyi bekler. */
+@Entity(tableName = "attachments")
+data class AttachmentEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val mime: String,
+    val size: Long,
+    val uploaded: Boolean,
+    val createdAt: Long,
+)

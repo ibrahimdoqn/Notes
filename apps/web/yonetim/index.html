@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sunucu yönetimi · Cam Notlar</title>
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<main class="adm">
+ <section class="sheet adm-card" id="gate" hidden>
+  <div class="authhead"><div class="logo" aria-hidden="true">⚙</div><h2 id="gateT">Sunucu yönetimi</h2><p id="gateSub"></p></div>
+  <form id="gateF" novalidate>
+   <label class="flbl">Kullanıcı adı<input class="fld" id="gUser" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+   <label class="flbl" id="gNameL" hidden>Görünen ad<input class="fld" id="gName" autocomplete="name"></label>
+   <label class="flbl">Parola<input class="fld" id="gPass" type="password" autocomplete="current-password"></label>
+   <label class="flbl" id="gPass2L" hidden>Parola (tekrar)<input class="fld" id="gPass2" type="password" autocomplete="new-password"></label>
+   <p class="aerr" id="gErr" role="alert"></p>
+   <button class="pill wide" id="gGo">Giriş yap</button>
+  </form>
+  <p class="hint center"><a class="lnk" href="/">Notlara dön</a></p>
+ </section>
+
+ <section class="sheet adm-panel" id="panel" hidden>
+  <header class="sh"><h2>Sunucu yönetimi</h2><span class="adm-me" id="me"></span><a class="txtbtn strong" href="/">Notlara dön</a></header>
+  <div class="sb">
+   <div class="adm-stats" id="stats"></div>
+   <p class="cap">Yeni kullanıcı</p>
+   <form class="card adm-new" id="newF" novalidate>
+    <div class="adm-row">
+     <label class="flbl">Kullanıcı adı<input class="fld" id="nUser" autocapitalize="none" spellcheck="false" placeholder="ayse"></label>
+     <label class="flbl">Görünen ad<input class="fld" id="nName" placeholder="Ayşe Yılmaz"></label>
+    </div>
+    <div class="adm-row">
+     <label class="flbl">Parola<span class="adm-pw"><input class="fld" id="nPass" autocomplete="new-password" spellcheck="false"><button type="button" class="txtbtn" id="nGen">Üret</button></span></label>
+     <label class="srow adm-check"><span>Yönetici<small>Kullanıcıları yönetebilir</small></span><input type="checkbox" class="sw" id="nAdmin"></label>
+    </div>
+    <p class="aerr" id="nErr" role="alert"></p>
+    <button class="pill" id="nGo">Kullanıcı oluştur</button>
+   </form>
+   <p class="cap">Kullanıcılar</p>
+   <div class="card" id="users"><p class="hint">Yükleniyor…</p></div>
+   <p class="hint">Kullanıcı adı 3–32 karakter: küçük harf, rakam, nokta, tire, alt çizgi. Parola en az 10 karakter. Parola sıfırlanınca kullanıcı tüm cihazlarından çıkış yapar.</p>
+  </div>
+ </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/src/admin/main.ts"></script>
+</body>
+</html>

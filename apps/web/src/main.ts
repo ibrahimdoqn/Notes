@@ -8,10 +8,10 @@ import './styles/settings.css';
 import './styles/mobile.css';
 import './styles/app.css';
 import { normalizePrefs } from '@camnotlar/shared';
-import { refresh, HttpError } from './api/client.ts';
+import { info, refresh, HttpError } from './api/client.ts';
 import { initEditor } from './editor/editor.ts';
 import { P, S, cur, setSession, ui, type Session } from './state.ts';
-import { getMeta } from './store/db.ts';
+import { getMeta, setMeta } from './store/db.ts';
 import { clearLegacy, readLegacyLocalStorage } from './store/legacy.ts';
 import { addAll, loadAll, onChange, savePrefs, setSyncHint } from './store/repo.ts';
 import { schedule } from './sync/engine.ts';
@@ -55,6 +55,7 @@ async function boot() {
     if (P.mode === 'sched') applyPrefs();
   }, 60_000);
   registerSW();
+  void info().then((i) => setMeta('maxAttachmentBytes', i.maxAttachmentBytes), () => {});
 
   if (!sess) {
     // Prototip sürümünden kalan notlar varsa sunucusuz modda otomatik içeri alınır.
@@ -71,7 +72,8 @@ async function boot() {
   }
   if (sess.mode === 'server') {
     try {
-      await refresh();
+      const r = await refresh();
+      setSession({ ...sess, username: r.user.username, isAdmin: r.user.isAdmin });
       startServer();
     } catch (e) {
       // Ağ yoksa çevrimdışı çalışılır; eşitleme motoru bağlantı gelince yeniden dener.

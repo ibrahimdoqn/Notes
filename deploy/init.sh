@@ -34,5 +34,6 @@ chown 1000:1000 backups 2>/dev/null || chmod 777 backups
 
 echo ".env oluşturuldu (DOMAIN=${domain})."
 echo "Sonraki adımlar:"
-echo "  docker compose up -d"
-echo "  docker compose exec api node dist/cli/admin.js create"
+echo "  docker compose up -d --build"
+echo "  Tarayıcıda https://${domain}/yonetim/ adresini aç ve yönetici hesabını oluştur."
+echo "  Diğer kullanıcıları da aynı sayfadan açarsın."

@@ -74,6 +74,10 @@ class MainActivity : FragmentActivity() {
 
     private fun parse(i: Intent?): Launch? = when {
         i == null -> null
+        (i.action == Intent.ACTION_SEND || i.action == Intent.ACTION_SEND_MULTIPLE) && streams(i).isNotEmpty() -> {
+            val text = listOfNotNull(i.getStringExtra(Intent.EXTRA_SUBJECT), i.getStringExtra(Intent.EXTRA_TEXT)).joinToString("\n")
+            Launch.NewNote(if (text.isBlank()) null else Html.fromPlainText(text), streams(i))
+        }
         i.action == Intent.ACTION_SEND && i.type?.startsWith("text/") == true -> {
             val subject = i.getStringExtra(Intent.EXTRA_SUBJECT)
             val text = i.getStringExtra(Intent.EXTRA_TEXT).orEmpty()
@@ -83,6 +87,13 @@ class MainActivity : FragmentActivity() {
         i.action == ACTION_NEW_CHECKLIST -> Launch.NewNote("<div>Yapılacaklar</div><ul class=\"check\"><li><br></li></ul>")
         i.getStringExtra(EXTRA_NOTE_ID) != null -> Launch.OpenNote(i.getStringExtra(EXTRA_NOTE_ID)!!)
         else -> null
+    }
+
+    @Suppress("DEPRECATION")
+    private fun streams(i: Intent): List<android.net.Uri> = when (i.action) {
+        Intent.ACTION_SEND -> listOfNotNull(i.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
+        Intent.ACTION_SEND_MULTIPLE -> i.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM).orEmpty()
+        else -> emptyList()
     }
 
     companion object {

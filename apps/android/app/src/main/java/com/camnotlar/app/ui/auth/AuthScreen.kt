@@ -39,37 +39,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.camnotlar.app.ui.MainViewModel
-import com.camnotlar.app.ui.common.Segmented
+import com.camnotlar.app.data.net.ApiClient
 import com.camnotlar.app.ui.theme.Cam
 import com.camnotlar.app.ui.theme.glass
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Giriş / kayıt ekranı: sunucu adresi, e-posta, parola; ya da sunucusuz kullanım. */
+/** Giriş ekranı: sunucu adresi, kullanıcı adı, parola; ya da sunucusuz kullanım. Hesaplar sunucunun /yonetim/ sayfasında açılır. */
 @Composable
 fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal: () -> Unit, onDone: () -> Unit) {
     val c = Cam.colors
     val scope = rememberCoroutineScope()
-    var mode by rememberSaveable { mutableStateOf("login") }
     var server by rememberSaveable { mutableStateOf(vm.lastServer().removePrefix("https://")) }
-    var email by rememberSaveable { mutableStateOf(vm.session.value?.email ?: "") }
+    var username by rememberSaveable { mutableStateOf(vm.session.value?.username ?: "") }
     var password by remember { mutableStateOf("") }
-    var invite by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf(message) }
     var busy by remember { mutableStateOf(false) }
-    var signupOpen by remember { mutableStateOf(true) }
+    var needsSetup by remember { mutableStateOf(false) }
 
-    // Sunucu adresi değişince kaydın açık olup olmadığını öğren (davet kodu alanı için).
+    // Sunucu adresi değişince kurulmuş mu diye bak (kurulmamışsa yönetim sayfasına yönlendir).
     LaunchedEffect(server) {
+        needsSetup = false
         if (server.length < 4) return@LaunchedEffect
         delay(500)
-        vm.serverInfo(server).onSuccess { signupOpen = it.allowSignup }
+        vm.serverInfo(server).onSuccess { needsSetup = it.needsSetup }
     }
 
     Box(Modifier.fillMaxSize().systemBarsPadding().imePadding(), contentAlignment = Alignment.Center) {
@@ -89,31 +89,29 @@ fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal:
                 color = c.sub, fontSize = 14.sp, textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(4.dp))
-            Segmented(listOf("login" to "Giriş yap", "register" to "Hesap oluştur"), mode) { mode = it; error = null }
             OutlinedTextField(server, { server = it.trim() }, label = { Text("Sunucu") }, placeholder = { Text("notlar.ornek.com") },
                 singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-            OutlinedTextField(email, { email = it }, label = { Text("E-posta") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+            OutlinedTextField(username, { username = it.trim() }, label = { Text("Kullanıcı adı") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false))
             OutlinedTextField(password, { password = it }, label = { Text("Parola") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
-            if (mode == "register" && !signupOpen) {
-                OutlinedTextField(invite, { invite = it.trim() }, label = { Text("Davet kodu") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            if (needsSetup) {
+                Text(
+                    "Bu sunucu henüz kurulmadı. Tarayıcıda ${ApiClient.normalizeServer(server)}/yonetim/ adresinden yönetici hesabını oluştur.",
+                    color = c.accInk, fontSize = 13.sp, modifier = Modifier.fillMaxWidth(),
+                )
             }
             if (error != null) Text(error ?: "", color = c.red, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
             Button(
                 onClick = {
-                    if (server.isBlank() || email.isBlank() || password.isBlank()) {
-                        error = "Sunucu, e-posta ve parola gerekli."
-                        return@Button
-                    }
-                    if (mode == "register" && password.length < 10) {
-                        error = "Parola en az 10 karakter olmalı."
+                    if (server.isBlank() || username.isBlank() || password.isBlank()) {
+                        error = "Sunucu, kullanıcı adı ve parola gerekli."
                         return@Button
                     }
                     busy = true
                     error = null
                     scope.launch {
-                        val err = vm.authenticate(mode, server, email, password, invite)
+                        val err = vm.authenticate(server, username, password)
                         busy = false
                         if (err == null) {
                             password = ""
@@ -127,8 +125,9 @@ fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal:
                 shape = RoundedCornerShape(999.dp),
             ) {
                 if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = c.accOn, strokeWidth = 2.dp)
-                else Text(if (mode == "login") "Giriş yap" else "Hesap oluştur", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                else Text("Giriş yap", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             }
+            Text("Hesabın yok mu? Sunucu yöneticisi oluşturur.", color = c.sub, fontSize = 13.sp, textAlign = TextAlign.Center)
             if (!fromLocal) {
                 TextButton(onClick = onLocal, modifier = Modifier.fillMaxWidth()) {
                     Text("Sunucusuz, yalnızca bu cihazda kullan", color = c.accInk, fontWeight = FontWeight.Medium)

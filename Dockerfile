@@ -33,6 +33,8 @@ ENV NODE_ENV=production PORT=3000
 COPY --from=prod-deps /src/node_modules ./node_modules
 COPY --from=build /src/apps/api/dist ./dist
 COPY apps/api/package.json ./package.json
+# Ek dosyaları birimi: adlandırılmış birim bu sahipliği devralır.
+RUN mkdir -p /data/attachments && chown node:node /data/attachments
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD wget -qO- http://127.0.0.1:3000/healthz || exit 1

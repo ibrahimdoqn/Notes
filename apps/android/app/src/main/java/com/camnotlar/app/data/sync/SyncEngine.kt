@@ -34,6 +34,7 @@ sealed interface SyncState {
 class SyncEngine(
     private val api: ApiClient,
     private val repo: NotesRepository,
+    private val attachments: com.camnotlar.app.data.repo.Attachments,
     private val scope: CoroutineScope,
     private val userId: () -> String?,
 ) {
@@ -43,6 +44,7 @@ class SyncEngine(
     private var scheduled: Job? = null
     private var failures = 0
     var enabled = false
+    var onAttachmentRejected: ((String, String) -> Unit)? = null
 
     fun schedule(delayMs: Long = 2000) {
         if (!enabled) return
@@ -62,6 +64,8 @@ class SyncEngine(
         return mutex.withLock {
             _state.value = SyncState.Syncing
             try {
+                // Önce ek dosyaları: not sunucuya ulaştığında eki de hazır olsun.
+                attachments.uploadPending { name, msg -> onAttachmentRejected?.invoke(name, msg) }
                 pushAll()
                 pullAll()
                 failures = 0

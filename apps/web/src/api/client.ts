@@ -77,8 +77,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const info = async (): Promise<ServerInfo> => parse<ServerInfo>(await raw('/info', {}, false));
 
-export async function authenticate(kind: 'login' | 'register', body: Record<string, unknown>): Promise<AuthResponse> {
-  const r = await parse<AuthResponse>(await raw(`/auth/${kind}`, { method: 'POST', body: JSON.stringify({ ...body, platform: 'web' }) }, false));
+export async function authenticate(kind: 'login' | 'setup', body: Record<string, unknown>): Promise<AuthResponse> {
+  const r = await parse<AuthResponse>(await raw(kind === 'setup' ? '/setup' : '/auth/login', { method: 'POST', body: JSON.stringify({ ...body, platform: 'web' }) }, false));
   accessToken = r.accessToken;
   return r;
 }
@@ -97,4 +97,19 @@ export function deviceName(): string {
   const b = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Tarayıcı';
   const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
   return os ? `${b} · ${os}` : b;
+}
+
+/** İkili istek (ek indirme/yükleme); kimlik ve belirteç yenileme api() ile aynı. */
+export async function apiRaw(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!accessToken) await refresh();
+  let res = await raw(path, init);
+  if (res.status === 401) {
+    await refresh();
+    res = await raw(path, init);
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    throw new HttpError(res.status, body?.error.code ?? 'internal', body?.error.message ?? `Sunucu hatası (${res.status})`);
+  }
+  return res;
 }

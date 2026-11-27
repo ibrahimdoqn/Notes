@@ -71,7 +71,7 @@ data class PullResponse(val changes: List<ChangeOut>, val seq: Long, val hasMore
 @Serializable
 data class UserDto(
     val id: String,
-    val email: String,
+    val username: String,
     val displayName: String = "",
     val isAdmin: Boolean = false,
     val createdAt: Long = 0,
@@ -88,19 +88,21 @@ data class AuthResponse(
 
 @Serializable
 data class LoginRequest(
-    val email: String,
+    val username: String,
     val password: String,
     val deviceName: String,
     val platform: String = "android",
     val deviceId: String? = null,
-    val inviteCode: String? = null,
 )
 
 @Serializable
 data class RefreshRequest(val refreshToken: String)
 
 @Serializable
-data class ServerInfo(val name: String, val apiVersion: Int, val allowSignup: Boolean)
+data class ServerInfo(val name: String, val apiVersion: Int, val needsSetup: Boolean = false, val maxAttachmentBytes: Long = 25L * 1024 * 1024)
+
+@Serializable
+data class AttachmentDto(val id: String, val name: String, val mime: String, val size: Long, val sha256: String = "", val createdAt: Long = 0)
 
 @Serializable
 data class DeviceDto(

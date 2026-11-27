@@ -74,6 +74,11 @@ export function refreshFmt(ed: HTMLElement): void {
   }
 }
 
+/** İmleç konumuna HTML ekler (ekler için). */
+export function insertHtml(html: string): void {
+  exec('insertHTML', html);
+}
+
 /** Yapıştırmada yalnızca düz metin alınır (dış biçimler sözleşmeyi bozmasın). */
 export function insertPlain(text: string): void {
   exec('insertText', text);

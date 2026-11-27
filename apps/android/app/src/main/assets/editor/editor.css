@@ -12,3 +12,7 @@ body{padding:4px 20px 80px;font:15px/1.45 system-ui,-apple-system,Roboto,sans-se
 .ed ul.check>li::before{content:"";position:absolute;left:0;top:.18em;width:20px;height:20px;border-radius:50%;border:1.6px solid var(--sub);box-sizing:border-box;transition:all .2s}
 .ed ul.check>li.done{color:var(--sub);text-decoration:line-through;text-decoration-color:rgba(128,128,128,.5)}
 .ed ul.check>li.done::before{background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat;border-color:var(--acc)}
+.ed img.att{display:block;max-width:100%;max-height:70vh;margin:8px 0;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.12);min-width:60px;min-height:40px;background:rgba(128,128,128,.12)}
+.ed img.att.loading{opacity:.5}.ed img.att.missing{min-height:60px;outline:1px dashed var(--sub)}
+.ed span.file{display:inline-block;padding:4px 10px;margin:2px 0;border-radius:10px;background:rgba(128,128,128,.16);color:var(--acc);font-size:.9em;font-weight:600;user-select:none}
+.ed span.file::before{content:"📎 "}

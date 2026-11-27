@@ -31,4 +31,11 @@ export const relTime = (t: number) => {
   if (s < 12 * 3600) return fT.format(t);
   return short(t);
 };
+/** Bayt sayısını okunur boyuta çevirir: 12 KB, 3,4 MB. */
+export function formatSize(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+}
+
 export { H, D };

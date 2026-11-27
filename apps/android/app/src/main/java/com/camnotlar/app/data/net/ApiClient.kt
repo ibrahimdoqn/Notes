@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
@@ -110,7 +111,7 @@ class ApiClient(private val store: SecureStore) {
     }
 
     suspend fun authenticate(kind: String, body: LoginRequest): AuthResponse {
-        val r = raw("POST", "/auth/$kind", json.encodeToString(LoginRequest.serializer(), body), AuthResponse.serializer(), auth = false)
+        val r = raw("POST", if (kind == "setup") "/setup" else "/auth/login", json.encodeToString(LoginRequest.serializer(), body), AuthResponse.serializer(), auth = false)
         adopt(r)
         return r
     }
@@ -136,6 +137,52 @@ class ApiClient(private val store: SecureStore) {
         call("GET", "/notes/$noteId/revisions", null, RevisionsResponse.serializer()).revisions
 
     suspend fun folders(): List<FolderDto> = call("GET", "/folders", null, FoldersResponse.serializer()).folders
+
+    /** Ek yükleme: gövde ham dosya. Aynı kimlikle tekrar yükleme zararsızdır. */
+    suspend fun uploadAttachment(id: String, file: java.io.File, mime: String, name: String) {
+        if (accessToken == null) refresh()
+        suspend fun once(): Response = withContext(Dispatchers.IO) {
+            val req = Request.Builder().url("$baseUrl/v1/attachments/$id")
+                .header("Authorization", "Bearer ${accessToken.orEmpty()}")
+                .header("X-File-Name", java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20"))
+                .put(file.asRequestBody(mime.toMediaType()))
+                .build()
+            http.newCall(req).execute()
+        }
+        var res = once()
+        if (res.code == 401) {
+            res.close()
+            refresh()
+            res = once()
+        }
+        parse(res, AttachmentDto.serializer())
+    }
+
+    /** Ek indirme: dosyayı [dest]'e yazar, sunucudaki türü ve adı döner. */
+    suspend fun downloadAttachment(id: String, dest: java.io.File): Pair<String, String> {
+        if (accessToken == null) refresh()
+        suspend fun once(): Response = withContext(Dispatchers.IO) {
+            http.newCall(Request.Builder().url("$baseUrl/v1/attachments/$id").header("Authorization", "Bearer ${accessToken.orEmpty()}").build()).execute()
+        }
+        var res = once()
+        if (res.code == 401) {
+            res.close()
+            refresh()
+            res = once()
+        }
+        return withContext(Dispatchers.IO) {
+            res.use {
+                if (!it.isSuccessful) throw ApiException(it.code, "not_found", "Ek indirilemedi (${it.code}).")
+                val tmp = java.io.File(dest.path + ".part")
+                it.body!!.byteStream().use { input -> tmp.outputStream().use { out -> input.copyTo(out) } }
+                tmp.renameTo(dest)
+                val mime = it.header("x-file-mime") ?: "application/octet-stream"
+                val name = it.header("content-disposition")?.let { cd -> Regex("filename\\*=UTF-8''([^;]+)").find(cd)?.groupValues?.get(1) }
+                    ?.let { n -> java.net.URLDecoder.decode(n, "UTF-8") } ?: "dosya"
+                mime to name
+            }
+        }
+    }
 
     fun wsUrl(): String = baseUrl.replaceFirst("https://", "wss://").replaceFirst("http://", "ws://") + "/v1/ws"
 

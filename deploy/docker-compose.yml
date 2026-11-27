@@ -1,11 +1,13 @@
 # Cam Notlar sunucusu. Kurulum: ./init.sh && docker compose up -d
+# Ardından https://<alan-adı>/yonetim/ adresinden ilk yönetici hesabı oluşturulur.
 # Dışarıya yalnızca Caddy'nin 80/443 portları açılır; veritabanı iç ağda kalır.
 name: camnotlar
 
 x-api-env: &api-env
   DATABASE_URL: postgres://camnotlar:${POSTGRES_PASSWORD:?init.sh çalıştır}@db:5432/camnotlar
   JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?init.sh çalıştır}
-  ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
+  MAX_ATTACHMENT_MB: ${MAX_ATTACHMENT_MB:-25}
+  ATTACHMENTS_DIR: /data/attachments
   HIBP_CHECK: ${HIBP_CHECK:-true}
   TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
   SECURE_COOKIES: ${SECURE_COOKIES:-true}
@@ -32,6 +34,8 @@ services:
     build: { context: .., target: api }
     restart: unless-stopped
     environment: *api-env
+    volumes:
+      - attachments:/data/attachments
     depends_on:
       db: { condition: service_healthy }
 
@@ -45,6 +49,7 @@ services:
       BACKUP_HOUR: ${BACKUP_HOUR:-3}
     volumes:
       - ./backups:/backups
+      - attachments:/data/attachments
     healthcheck: { disable: true }
     depends_on:
       api: { condition: service_healthy }
@@ -66,6 +71,7 @@ services:
       retries: 20
 
 volumes:
+  attachments:
   caddy_data:
   caddy_config:
   pg_data:

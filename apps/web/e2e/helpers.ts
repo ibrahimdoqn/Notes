@@ -1,28 +1,55 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, request as pwRequest, type APIRequestContext, type Page } from '@playwright/test';
 
 let n = 0;
-export const uniqueEmail = () => `e2e${Date.now()}${n++}@ornek.com`;
+export const BASE = process.env.E2E_BASE ?? 'http://localhost:4174';
 export const PASSWORD = 'cok-gizli-parola-1';
+export const ADMIN = { username: 'yonetici', password: 'yonetici-parola-123' };
+export const uniqueUser = () => `e2e${Date.now().toString(36)}${n++}`;
 
-export async function register(page: Page, email = uniqueEmail()): Promise<string> {
-  await page.goto('/');
-  await expect(page.locator('#auth')).toBeVisible();
-  await page.locator('#authMode [data-m=register]').click();
-  await page.fill('#aEmail', email);
-  await page.fill('#aPass', PASSWORD);
-  await page.click('#aGo');
-  await expect(page.locator('#auth')).toBeHidden();
-  await expect(page.locator('#sync')).toContainText('Eşitlendi');
-  return email;
+async function api(baseURL: string): Promise<APIRequestContext> {
+  return pwRequest.newContext({ baseURL });
 }
 
-export async function login(page: Page, email: string): Promise<void> {
+/** Sunucu boşsa ilk yöneticiyi kurar; yönetici belirteci döner. */
+let cachedToken: string | null = null;
+export async function adminToken(baseURL: string): Promise<string> {
+  // Giriş oran sınırına (15 dk'da 10) takılmamak için belirteç test dosyası boyunca yeniden kullanılır.
+  if (cachedToken) return cachedToken;
+  const ctx = await api(baseURL);
+  const info = await (await ctx.get('/v1/info')).json();
+  const body = { ...ADMIN, platform: 'android', deviceName: 'e2e' };
+  const res = info.needsSetup ? await ctx.post('/v1/setup', { data: body }) : await ctx.post('/v1/auth/login', { data: body });
+  expect(res.ok()).toBe(true);
+  cachedToken = (await res.json()).accessToken as string;
+  await ctx.dispose();
+  return cachedToken;
+}
+
+/** Yönetici olarak yeni kullanıcı açar (uygulamalarda kayıt yok). */
+export async function createUser(baseURL: string, username = uniqueUser()): Promise<string> {
+  const token = await adminToken(baseURL);
+  const ctx = await api(baseURL);
+  const res = await ctx.post('/v1/admin/users', { data: { username, password: PASSWORD }, headers: { authorization: `Bearer ${token}` } });
+  expect(res.status()).toBe(201);
+  await ctx.dispose();
+  return username;
+}
+
+export async function login(page: Page, username: string, password = PASSWORD): Promise<void> {
   await page.goto('/');
   await expect(page.locator('#auth')).toBeVisible();
-  await page.fill('#aEmail', email);
-  await page.fill('#aPass', PASSWORD);
+  await page.fill('#aUser', username);
+  await page.fill('#aPass', password);
   await page.click('#aGo');
   await expect(page.locator('#auth')).toBeHidden();
+}
+
+/** Yeni kullanıcı açıp onunla giriş yapar. */
+export async function register(page: Page): Promise<string> {
+  const username = await createUser(BASE);
+  await login(page, username);
+  await expect(page.locator('#sync')).toContainText('Eşitlendi');
+  return username;
 }
 
 /** Yeni not açıp verilen satırları yazar (ilk satır başlık). */
