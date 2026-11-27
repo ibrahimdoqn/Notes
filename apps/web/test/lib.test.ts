@@ -7,7 +7,7 @@ describe('sözcük farkı', () => {
   it('eklenen ve silinen sözcükleri işaretler', () => {
     const html = diffHtml(wordDiff('süt ve ekmek', 'süt, peynir ve ekmek'));
     expect(html).toContain('<del>süt</del>');
-    expect(html).toContain('<ins>süt, peynir</ins>');
+    expect(html).toContain('<ins>peynir </ins>ve ekmek');
   });
 });
 
