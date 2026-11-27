@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cam Notlar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: sakin, özenli, Apple Notes gibi sessiz bir araç
+   IDEA: renkli bir masanın üstüne konmuş buzlu cam yapraklar
+   PICTURE: uygulamanın kendisi — klasör, liste, not; arkada yavaşça kayan sıcak ışık
+   COLOUR and TYPE: kehribar vurgu, şeftali ve gök mavisi ışık; SF / Inter, 4 boyut
+   LAYOUT: masaüstünde 3 cam sütun, mobilde iOS gibi kayan tek ekran */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4efe4,#0b0c10);--ink:light-dark(#1c1c1e,#f2f2f7);--sub:light-dark(#6e6e73,#98989f);
+--ga:.52;--blur:30px;--fs:17px;--edf:inherit;--accOn:#1c1c1e;
+--glass:light-dark(rgb(255 255 255/var(--ga)),rgb(28 28 34/var(--ga)));--glass2:light-dark(rgb(255 255 255/calc(var(--ga) + .18)),rgb(44 44 52/calc(var(--ga) + .1)));
+--glassM:light-dark(rgb(250 248 243/calc(var(--ga) + .22)),rgb(16 16 20/calc(var(--ga) + .22)));
+--line:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.09));--edge:light-dark(rgba(255,255,255,.95),rgba(255,255,255,.13));
+--acc:#e8a900;--accInk:light-dark(#a37400,#ffcc40);--sel:light-dark(rgba(232,169,0,.2),rgba(255,204,64,.18));
+--hl:#f6c43c;--red:#ff3b30;--sh:0 24px 70px light-dark(rgba(80,50,0,.16),rgba(0,0,0,.55));
+--b1:light-dark(#ffc94d,#8a5a00);--b2:light-dark(#ff9d7e,#7a2f22);--b3:light-dark(#8fd0ff,#123f66)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root[data-mode=light]{color-scheme:light}:root[data-mode=dark]{color-scheme:dark}
+/* temalar */
+:root[data-accent=ocean]{--acc:#0a84ff;--accInk:light-dark(#0062cc,#64b5ff);--sel:light-dark(rgba(10,132,255,.16),rgba(10,132,255,.24));--hl:#a9d4ff;--accOn:#fff;--b1:light-dark(#7cc4ff,#0b3a6b);--b2:light-dark(#9eefdf,#0d4a44);--b3:light-dark(#bcd6ff,#1a2f66)}
+:root[data-accent=forest]{--acc:#30b15b;--accInk:light-dark(#1d7a3c,#62d68e);--sel:light-dark(rgba(48,177,91,.16),rgba(48,177,91,.24));--hl:#b2e8c2;--b1:light-dark(#a6e3a1,#16432a);--b2:light-dark(#ffe08a,#4a3a0c);--b3:light-dark(#8fd6c8,#0f3d38)}
+:root[data-accent=rose]{--acc:#ff4f7b;--accInk:light-dark(#c42a55,#ff86a5);--sel:light-dark(rgba(255,79,123,.15),rgba(255,79,123,.22));--hl:#ffbccd;--accOn:#fff;--b1:light-dark(#ffb3c6,#5c1a2c);--b2:light-dark(#ffcf9e,#5a2e12);--b3:light-dark(#ffd9e8,#3d1730)}
+:root[data-accent=lav]{--acc:#8e6cf0;--accInk:light-dark(#5e3fc9,#bba5ff);--sel:light-dark(rgba(142,108,240,.16),rgba(142,108,240,.26));--hl:#d3c6ff;--accOn:#fff;--b1:light-dark(#c9b8ff,#2e2366);--b2:light-dark(#ffc2e0,#4d1d3d);--b3:light-dark(#a8d8ff,#173a5c)}
+:root[data-accent=graphite]{--acc:#8e8e93;--accInk:light-dark(#3a3a3c,#d1d1d6);--sel:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.12));--hl:#d6d6db;--accOn:#fff;--b1:light-dark(#dcdce1,#2a2a30);--b2:light-dark(#c9ccd3,#1f2228);--b3:light-dark(#e8e3da,#2b2924)}
+:root[data-glass=mat]{--ga:.84;--blur:40px}:root[data-glass=clear]{--ga:.26;--blur:16px}
+:root[data-font=serif]{--edf:"Iowan Old Style","New York",Georgia,"Times New Roman",serif}
+:root[data-font=mono]{--edf:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+:root[data-size=s]{--fs:15px}:root[data-size=l]{--fs:20px}
+:root[data-oled]{--bg:light-dark(#f4efe4,#000);--glass:light-dark(rgb(255 255 255/var(--ga)),rgb(0 0 0/calc(var(--ga) + .2)));--glass2:light-dark(rgb(255 255 255/calc(var(--ga) + .18)),rgb(18 18 20/calc(var(--ga) + .2)));--glassM:light-dark(rgb(250 248 243/calc(var(--ga) + .22)),rgb(0 0 0/.88))}
+:root[data-oled] .bg::after{content:"";position:absolute;inset:0;background:light-dark(transparent,rgba(0,0,0,.62))}
+:root[data-still] .bg i{animation:none}
+:root[data-nopv] .sx{display:none}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* arka plan ışığı */
+.bg{position:fixed;inset:0;overflow:hidden;z-index:0}
+.bg i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.85;animation:drift 26s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:52vmax;height:52vmax;background:var(--b1);left:-12vmax;top:-14vmax}
+.bg i:nth-child(2){width:44vmax;height:44vmax;background:var(--b2);right:-10vmax;bottom:-16vmax;animation-delay:-9s}
+.bg i:nth-child(3){width:34vmax;height:34vmax;background:var(--b3);right:18vw;top:-10vmax;animation-delay:-17s;opacity:.6}
+@keyframes drift{to{transform:translate(6vmax,5vmax) scale(1.12)}}
+/* yerleşim */
+.app{position:fixed;left:0;right:0;top:0;height:var(--vh,100dvh);z-index:1;display:grid;grid-template-columns:240px 330px minmax(0,1fr);gap:12px;padding:12px}
+.app.nos{grid-template-columns:330px minmax(0,1fr)}.app.nos .side{display:none}
+.pane{position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--glass);-webkit-backdrop-filter:blur(var(--blur)) saturate(180%);backdrop-filter:blur(var(--blur)) saturate(180%);border:1px solid var(--line);border-radius:22px;transition:background .3s;box-shadow:var(--sh),inset 0 1px 0 var(--edge)}
+.side{background:light-dark(rgba(255,255,255,.38),rgba(22,22,28,.45))}
+.ph{display:flex;align-items:center;gap:6px;min-height:52px;padding:10px 12px 4px}
+.sp{flex:1}
+.lights{display:flex;gap:8px;padding-left:6px}.lights i{width:12px;height:12px;border-radius:50%;background:#ff5f57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.big{margin:0;padding:2px 18px 8px;font-size:22px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.side .big{font-size:13px;color:var(--sub);font-weight:600;padding:6px 20px 6px}
+.scrollv{flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.ibtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--accInk);transition:background .15s}
+.ibtn:hover,.fb:hover{background:var(--line)}.ibtn.on{background:var(--sel)}
+.txtbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;color:var(--accInk);font-weight:500}
+.txtbtn:hover{background:var(--line)}
+.back{display:none;align-items:center;gap:2px;color:var(--accInk);font-size:17px;padding:8px 6px 8px 2px;min-height:44px}
+.back .i{width:26px;height:26px;stroke-width:2.2}
+.cap{margin:14px 0 4px;padding:0 22px;font-size:12px;font-weight:600;color:var(--sub)}
+.hint{margin:6px 22px 4px;font-size:13px;color:var(--sub)}
+.grp{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+/* klasör satırları */
+.row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;min-height:36px;transition:background .15s}
+.row:hover{background:var(--line)}.row.on{background:var(--sel)}
+.row>.i{color:var(--accInk)}.row[data-v=trash]>.i{color:var(--sub)}
+.row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.row .ct{color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+.mini{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--sub)}.mini:hover{background:var(--line)}.mini .i{width:16px;height:16px}.mini.red{color:var(--red)}
+.pf{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line)}
+/* arama */
+.search{display:flex;align-items:center;gap:6px;margin:0 14px 8px;padding:0 10px;height:36px;border-radius:11px;background:light-dark(rgba(118,118,128,.12),rgba(118,118,128,.24));color:var(--sub)}
+.search .i{width:17px;height:17px}
+.search input{flex:1;border:0;background:none;outline:none;font-size:16px;color:var(--ink);height:100%}
+.search input::placeholder{color:var(--sub)}
+/* not listesi */
+.item{position:relative;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background .15s}
+.item:hover{background:var(--line)}
+.item.on{background:var(--hl);color:#1c1c1e}.item.on .sn,.item.on .fd{color:rgba(0,0,0,.6)}
+.tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sn{color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.sn b{font-weight:500;color:inherit;margin-right:6px;filter:brightness(.8)}
+.fd{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);margin-top:3px}.fd .i{width:13px;height:13px}
+.none{display:grid;place-items:center;text-align:center;gap:6px;padding:60px 24px;color:var(--sub)}
+.none .i{width:44px;height:44px;stroke-width:1.2;opacity:.6}.none p{margin:0}
+.pill{margin-top:8px;padding:10px 18px;border-radius:999px;background:var(--acc);color:var(--accOn);font-weight:600}
+/* editör */
+.edit{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"fmt fmt act" "ban ban ban" "sc sc sc" "ef ef ef"}
+.fmt{grid-area:fmt;display:flex;align-items:center;gap:2px;padding:10px 12px;overflow-x:auto;scrollbar-width:none}
+.fmt::-webkit-scrollbar{display:none}
+.act{grid-area:act;display:flex;align-items:center;gap:2px;padding:10px 12px}
+.fb{flex:none;min-width:36px;height:36px;padding:0 8px;border-radius:10px;display:grid;place-items:center;font-size:16px;transition:background .15s}
+.fb.on{background:var(--sel);color:var(--accInk)}
+.sep{width:1px;height:20px;background:var(--line);margin:0 6px;flex:none}
+.banner{grid-area:ban;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 14px 6px;padding:10px 14px;border-radius:12px;background:var(--sel);font-size:14px}
+.banner span{flex:1 1 200px}.banner button{font-weight:600;color:var(--accInk)}.banner .red{color:var(--red)}
+#sc{grid-area:sc;border-top:1px solid var(--line)}
+.paper{max-width:740px;margin:0 auto;padding:14px clamp(20px,5vw,56px) 90px}
+.stamp{margin:0 0 14px;text-align:center;font-size:12px;color:var(--sub)}
+.ed{outline:none;font-family:var(--edf);font-size:var(--fs);line-height:1.6;min-height:60vh;caret-color:var(--acc);overflow-wrap:anywhere}
+.ed::first-line{font-size:1.65em;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.ed h2{font-size:20px;margin:18px 0 4px;letter-spacing:-.01em}
+.ed ul,.ed ol{margin:4px 0;padding-left:26px}.ed li{margin:3px 0}
+.ed ul.check{list-style:none;padding-left:0}
+.ed ul.check>li{position:relative;padding-left:32px;transition:color .2s}
+.ed ul.check>li::before{content:"";position:absolute;left:0;top:.18em;width:20px;height:20px;border-radius:50%;border:1.6px solid var(--sub);cursor:pointer;transition:all .2s}
+.ed ul.check>li.done{color:var(--sub);text-decoration:line-through;text-decoration-color:rgba(128,128,128,.5)}
+.ed ul.check>li.done::before{background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat;border-color:var(--acc)}
+.ef{grid-area:ef;display:flex;justify-content:flex-end;padding:6px 16px;font-size:12px;color:var(--sub);border-top:1px solid var(--line)}
+.empty{grid-area:sc;display:none;place-items:center;text-align:center;color:var(--sub);padding:24px}
+.empty .i{width:56px;height:56px;stroke-width:1.1;opacity:.5;margin-bottom:8px}
+.nonote .empty{display:grid}.nonote #sc,.nonote .ef{display:none}
+.nonote .fmt,.nonote .act,.intrash .fmt{opacity:.35;pointer-events:none}
+.edit>.back{display:none}
+/* iletişim kutusu ve bildirim */
+.scrim{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.22);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fade .2s}
+.scrim.out{opacity:0;transition:opacity .18s}
+.dlg{width:min(340px,100%);padding:20px;border-radius:20px;background:var(--glass2);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);border:1px solid var(--line);box-shadow:var(--sh),inset 0 1px 0 var(--edge);animation:pop .25s cubic-bezier(.32,.72,0,1)}
+.dlg h3{margin:0 0 6px;font-size:17px;text-align:center}.dlg p{margin:0 0 12px;text-align:center;color:var(--sub);font-size:14px}
+.fld{width:100%;height:44px;margin:6px 0 4px;padding:0 12px;border-radius:11px;border:1px solid var(--line);background:light-dark(#fff,rgba(0,0,0,.3));font-size:16px;outline:none}
+.fld:focus{border-color:var(--acc)}
+.chs{display:flex;flex-direction:column;gap:2px;margin:8px 0;max-height:46vh;overflow:auto}
+.ch{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:11px;text-align:left}
+.ch:hover{background:var(--line)}.ch.on{background:var(--sel)}.ch .i{color:var(--accInk)}
+.dbtn{display:flex;gap:8px;margin-top:12px}
+.dbtn button{flex:1;height:44px;border-radius:12px;background:var(--line);font-weight:600}
+.dbtn .ok{background:var(--acc);color:var(--accOn)}.dbtn .ok.red{background:var(--red);color:#fff}
+#toast{position:fixed;z-index:30;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,30px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:14px;padding:11px 18px;border-radius:999px;background:var(--glass2);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);border:1px solid var(--line);box-shadow:var(--sh);font-size:14px;white-space:nowrap;transition:all .3s cubic-bezier(.32,.72,0,1)}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:var(--accInk);font-weight:600}
+@keyframes fade{from{opacity:0}}@keyframes pop{from{transform:scale(.92);opacity:0}}
+/* ayarlar */
+.set{z-index:18}
+.sheet{width:min(560px,100%);max-height:min(780px,92vh);display:flex;flex-direction:column;overflow:hidden;border-radius:24px;background:var(--glass2);-webkit-backdrop-filter:blur(40px) saturate(180%);backdrop-filter:blur(40px) saturate(180%);border:1px solid var(--line);box-shadow:var(--sh),inset 0 1px 0 var(--edge);animation:pop .3s cubic-bezier(.32,.72,0,1)}
+.sh{display:flex;align-items:center;padding:14px 12px 10px 22px;border-bottom:1px solid var(--line)}.sh h2{flex:1;margin:0;font-size:20px;letter-spacing:-.01em}
+.sb{padding:2px 0 22px}
+.card{margin:0 16px;padding:6px;border-radius:16px;background:light-dark(rgba(255,255,255,.62),rgba(255,255,255,.06));border:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.seg{display:flex;gap:2px;padding:3px;border-radius:11px;background:light-dark(rgba(118,118,128,.12),rgba(118,118,128,.24))}
+.seg button{flex:1;min-height:36px;padding:0 6px;border-radius:9px;font-size:14px;font-weight:500;white-space:nowrap;transition:background .2s}
+.seg button.on{background:light-dark(#fff,#636366);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.srow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:6px 10px;border-radius:10px;text-align:left}
+.srow>span{flex:1}.srow small{display:block;color:var(--sub);font-size:13px}
+.srow+.srow{box-shadow:inset 0 1px 0 var(--line)}
+.lnk{color:var(--accInk);font-weight:500;cursor:pointer}.lnk:hover{background:var(--line)}.lnk.red{color:var(--red)}
+.sw{appearance:none;-webkit-appearance:none;flex:none;margin:0;width:51px;height:31px;border-radius:99px;background:light-dark(#e3e3e8,#39393d);position:relative;cursor:pointer;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.22);transition:transform .25s cubic-bezier(.32,.72,0,1)}
+.sw:checked{background:#34c759}.sw:checked::after{transform:translateX(20px)}
+.sws{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:4px}
+.swt{display:grid;justify-items:center;gap:6px;padding:10px 4px;border-radius:12px;font-size:13px;font-weight:500}
+.swt i{width:40px;height:40px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);transition:box-shadow .2s}
+.swt.on{background:var(--sel)}.swt.on i{box-shadow:0 0 0 2px var(--glass2),0 0 0 4px var(--c)}
+.time{display:flex;align-items:center;gap:6px}
+.time input{height:36px;padding:0 8px;border-radius:9px;border:1px solid var(--line);background:light-dark(#fff,rgba(0,0,0,.3));font-size:16px}
+.prev{padding:12px;font-family:var(--edf);font-size:var(--fs);line-height:1.5}.prev b{display:block;font-size:1.3em}
+.mobonly{display:none}
+@media(max-width:760px){.set{place-items:end stretch;padding:0}.sheet{width:100%;max-height:94vh;border-radius:22px 22px 0 0;animation:up .4s cubic-bezier(.32,.72,0,1)}.sb{padding-bottom:calc(24px + env(safe-area-inset-bottom))}}
+@keyframes up{from{transform:translateY(100%)}}
+/* mobil */
+@media(max-width:760px){
+ .app{display:block;padding:0}
+ .pane{position:absolute;inset:0;border:0;border-radius:0;box-shadow:none;background:var(--glassM);transform:translateX(100%);transition:transform .42s cubic-bezier(.32,.72,0,1),opacity .42s}
+ [data-mob=folders] .side,[data-mob=list] .list,[data-mob=note] .edit{transform:none;opacity:1}
+ [data-mob=list] .side,[data-mob=note] .side,[data-mob=note] .list{transform:translateX(-30%);opacity:0;pointer-events:none}
+ .mobonly{display:flex}.deskonly,.lights{display:none!important}
+ .ph{padding:calc(6px + env(safe-area-inset-top)) 10px 0;min-height:calc(50px + env(safe-area-inset-top))}
+ .big,.side .big{font-size:34px;color:var(--ink);font-weight:700;padding:4px 18px 10px;letter-spacing:-.025em}
+ .back{display:flex}
+ .ibtn{width:44px;height:44px}.ibtn .i{width:24px;height:24px}
+ .search{margin:0 16px 10px;height:38px}
+ .cap{padding:0 32px;margin:20px 0 6px;font-size:13px}
+ .grp{gap:0;margin:0 16px;padding:0;border-radius:14px;background:var(--glass2);overflow:hidden;border:1px solid var(--line)}
+ .row,.item{border-radius:0;padding:12px 16px;min-height:50px}
+ .row{font-size:17px}.row .nm{font-weight:400}.row.on{background:none}.row:active,.item:active{background:var(--line)}
+ .row+.row,.item+.item{box-shadow:inset 0 1px 0 var(--line)}
+ .row .ct::after{content:"›";margin-left:10px;font-size:20px;opacity:.5}
+ .item.on{background:none;color:inherit}.item.on .sn,.item.on .fd{color:var(--sub)}
+ .tt{font-size:16px}.sn{font-size:14px}
+ .pf{justify-content:space-between;padding:6px 10px calc(6px + env(safe-area-inset-bottom));background:var(--glass2);font-size:13px;color:var(--sub)}
+ .pf .txtbtn{font-size:16px}
+ .edit{grid-template-areas:"back . act" "ban ban ban" "sc sc sc" "fmt fmt fmt"}
+ .edit>.back{display:flex;grid-area:back;padding-top:calc(8px + env(safe-area-inset-top))}
+ .act{padding:calc(6px + env(safe-area-inset-top)) 8px 4px}
+ #sc{border-top:0}
+ .fmt{padding:6px 10px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--glass2)}
+ .fb{min-width:44px;height:44px;font-size:18px}
+ .ef{display:none}.paper{padding:4px 20px 60px}
+ .ed{min-height:50vh}
+}
+@media(prefers-reduced-motion:reduce){*,.bg i{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-compose" viewBox="0 0 24 24"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-folderplus" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v5M9.5 13h5"/></symbol>
+<symbol id="i-move" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 13h6.5M13 10.5l2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-notes" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3.5h6l-1 6.5 4 3.5H6l4-3.5z"/><path d="M12 13.5V21"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13M10 11v5M14 11v5"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+<symbol id="i-ul" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></symbol>
+<symbol id="i-ol" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 4.5l1.5-1V8.5M3.5 14.5c0-1 2.8-1 2.8.3 0 1-2.8 2.4-2.8 3.7h3"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.6 6.6 0 0 0 9.7 9.7z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M2.5 12h2M19.5 12h2M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+<symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
+</svg>
+
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<div class="app" id="app" data-mob="list">
+ <aside class="pane side" aria-label="Klasörler">
+  <header class="ph"><div class="lights" aria-hidden="true"><i></i><i></i><i></i></div><span class="sp"></span><button class="ibtn" data-act="settings" aria-label="Ayarlar" title="Ayarlar (Ctrl+,)"><svg class="i"><use href="#i-gear"/></svg></button><button class="txtbtn" id="editF">Düzenle</button></header>
+  <h1 class="big">Klasörler</h1>
+  <nav id="folders" class="scrollv"></nav>
+  <footer class="pf"><button class="txtbtn" id="newF"><svg class="i"><use href="#i-folderplus"/></svg>Yeni Klasör</button><button class="ibtn mobonly" data-act="new" aria-label="Yeni not"><svg class="i"><use href="#i-compose"/></svg></button></footer>
+ </aside>
+
+ <section class="pane list" aria-label="Notlar">
+  <header class="ph">
+   <button class="back" data-go="folders"><svg class="i"><use href="#i-back"/></svg>Klasörler</button>
+   <button class="ibtn deskonly" id="tside" aria-label="Kenar çubuğunu aç/kapat" title="Kenar çubuğu"><svg class="i"><use href="#i-side"/></svg></button>
+   <span class="sp"></span>
+   <button class="ibtn" data-act="night" id="night" aria-label="Gece modunu aç/kapat" title="Gece modu"><svg class="i"><use href="#i-moon"/></svg></button>
+   <button class="ibtn" data-act="settings" aria-label="Ayarlar" title="Ayarlar (Ctrl+,)"><svg class="i"><use href="#i-gear"/></svg></button>
+   <button class="ibtn deskonly" data-act="new" aria-label="Yeni not" title="Yeni not (Alt+N)"><svg class="i"><use href="#i-compose"/></svg></button>
+  </header>
+  <h1 class="big" id="lt">Tüm Notlar</h1>
+  <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Ara" autocomplete="off" aria-label="Notlarda ara"></label>
+  <div id="notes" class="scrollv"></div>
+  <footer class="pf mobonly"><span style="width:44px"></span><span id="cnt"></span><button class="ibtn" data-act="new" aria-label="Yeni not"><svg class="i"><use href="#i-compose"/></svg></button></footer>
+ </section>
+
+ <main class="pane edit" aria-label="Not">
+  <button class="back" data-go="list"><svg class="i"><use href="#i-back"/></svg><span id="backL">Notlar</span></button>
+  <div class="fmt" id="fmt" role="toolbar" aria-label="Biçim">
+   <button class="fb" data-f="h" title="Başlık" style="font-weight:700">Aa</button>
+   <span class="sep"></span>
+   <button class="fb" data-f="bold" title="Kalın (Ctrl+B)" style="font-weight:800">B</button>
+   <button class="fb" data-f="italic" title="İtalik (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif">I</button>
+   <button class="fb" data-f="underline" title="Altı çizili (Ctrl+U)" style="text-decoration:underline">U</button>
+   <button class="fb" data-f="strikeThrough" title="Üstü çizili" style="text-decoration:line-through">S</button>
+   <span class="sep"></span>
+   <button class="fb" data-f="check" title="Kontrol listesi" aria-label="Kontrol listesi"><svg class="i"><use href="#i-check"/></svg></button>
+   <button class="fb" data-f="insertUnorderedList" title="Madde işaretli liste" aria-label="Madde işaretli liste"><svg class="i"><use href="#i-ul"/></svg></button>
+   <button class="fb" data-f="insertOrderedList" title="Numaralı liste" aria-label="Numaralı liste"><svg class="i"><use href="#i-ol"/></svg></button>
+  </div>
+  <div class="act">
+   <button class="ibtn" data-act="pin" title="Sabitle" aria-label="Sabitle"><svg class="i"><use href="#i-pin"/></svg></button>
+   <button class="ibtn" data-act="move" title="Klasöre taşı" aria-label="Klasöre taşı"><svg class="i"><use href="#i-move"/></svg></button>
+   <button class="ibtn" data-act="copy" title="Metni kopyala" aria-label="Metni kopyala"><svg class="i"><use href="#i-copy"/></svg></button>
+   <button class="ibtn" data-act="del" title="Sil" aria-label="Sil"><svg class="i"><use href="#i-trash"/></svg></button>
+  </div>
+  <div id="banner" class="banner" hidden><span>Bu not Son Silinenler’de.</span><button data-act="restore">Geri Al</button><button class="red" data-act="del">Kalıcı Olarak Sil</button></div>
+  <div class="scrollv" id="sc"><div class="paper"><p class="stamp" id="stamp"></p><div id="ed" class="ed" contenteditable="true" spellcheck="true" aria-label="Not içeriği"></div></div></div>
+  <div class="empty"><div><svg class="i"><use href="#i-notes"/></svg><p>Bir not seç ya da yeni bir tane oluştur.</p><button class="pill" data-act="new">Yeni Not</button></div></div>
+  <footer class="ef"><span id="wc"></span></footer>
+ </main>
+</div>
+<div class="scrim set" id="set" hidden>
+ <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setT">
+  <header class="sh"><h2 id="setT">Ayarlar</h2><button class="txtbtn" id="setX" style="font-weight:600">Bitti</button></header>
+  <div class="sb scrollv">
+   <p class="cap">Görünüm</p>
+   <div class="card">
+    <div class="seg" data-k="mode"></div>
+    <div class="srow" id="sched"><span>Gece modu saatleri<small>Bu aralıkta koyu tema açılır</small></span><div class="time"><input type="time" id="nFrom" aria-label="Başlangıç"><span>–</span><input type="time" id="nTo" aria-label="Bitiş"></div></div>
+    <label class="srow"><span>Saf siyah gece<small>OLED ekranlarda daha derin siyah, daha az pil</small></span><input type="checkbox" class="sw" data-k="oled"></label>
+   </div>
+   <p class="cap">Tema</p>
+   <div class="card"><div class="sws" id="themes"></div></div>
+   <p class="cap">Cam efekti</p>
+   <div class="card">
+    <div class="seg" data-k="glass"></div>
+    <label class="srow"><span>Arka plan hareketi<small>Işıklar yavaşça süzülür</small></span><input type="checkbox" class="sw" data-k="motion"></label>
+   </div>
+   <p class="cap">Yazı</p>
+   <div class="card">
+    <div class="seg" data-k="font"></div>
+    <div class="seg" data-k="size"></div>
+    <div class="prev"><b>Pazar kahvaltısı</b>Simit, beyaz peynir, domates ve demli bir çay.</div>
+   </div>
+   <p class="cap">Liste</p>
+   <div class="card">
+    <div class="seg" data-k="sort"></div>
+    <label class="srow"><span>Tarihe göre grupla<small>Bugün, Dün, Önceki 7 gün…</small></span><input type="checkbox" class="sw" data-k="group"></label>
+    <label class="srow"><span>Önizleme metni<small>Başlığın altında notun devamını göster</small></span><input type="checkbox" class="sw" data-k="preview"></label>
+   </div>
+   <p class="cap">Veriler</p>
+   <div class="card">
+    <button class="srow lnk" id="exp">Yedeği panoya kopyala</button>
+    <label class="srow lnk">Yedek dosyasından geri yükle<input type="file" id="imp" accept=".json,application/json" hidden></label>
+    <button class="srow lnk" id="rs">Örnek notları ekle</button>
+    <button class="srow lnk red" id="wipe">Tüm notları sil</button>
+   </div>
+   <p class="hint">Notlar ve ayarlar yalnızca bu tarayıcıda saklanır. Kısayollar: Alt+N yeni not, / arama, Ctrl+, ayarlar.</p>
+  </div>
+ </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+{
+const K='camnotlar.v1',$=s=>document.querySelector(s),app=$('#app'),ed=$('#ed');
+const mq=matchMedia('(max-width:760px)'),H=36e5,D=864e5,now=Date.now();
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ico=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+const plain=h=>new DOMParser().parseFromString(String(h).replace(/<(br|\/div|\/p|\/li|\/h[1-6]|hr)[^>]*>/gi,'$&\n'),'text/html').body.textContent;
+function meta(n){const l=plain(n.html).split('\n').map(s=>s.trim()).filter(Boolean);n.title=(l[0]||'Yeni Not').slice(0,120);n.snip=l.slice(1).join(' ').slice(0,140)||'Ek metin yok';n.words=l.join(' ').split(/\s+/).filter(Boolean).length}
+function load(){try{const s=JSON.parse(localStorage.getItem(K));return s&&Array.isArray(s.notes)?s:null}catch(e){return null}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function seed(){
+ const folders=[{id:'notlar',name:'Notlar'},{id:'is',name:'İş'},{id:'kisisel',name:'Kişisel'},{id:'tarif',name:'Tarifler'}];
+ const notes=[
+  {f:'notlar',pin:1,t:now-5*6e4,h:'<div>Cam Notlar’a hoş geldin</div><div>Notların bu tarayıcıda otomatik kaydedilir; ilk satır her zaman başlık olur.</div><ul class="check"><li class="done">Yeni not oluştur (Alt+N)</li><li>Bir maddeyi işaretlemek için daireye dokun</li><li>Notu sabitle, klasöre taşı ya da sil</li></ul><div>Mobilde klasörler, liste ve not arasında geri okuyla gezinebilirsin. Buradaki notlar örnektir, silebilirsin.</div>'},
+  {f:'is',t:now-2*H,h:'<div>Haftalık ürün toplantısı</div><h2>Gündem</h2><ol><li>Kasım metrikleri</li><li>Mobil sürüm 2.4 yayın planı</li><li>Destek talepleri</li></ol><h2>Aksiyonlar</h2><ul class="check"><li class="done">Sunumu ekiple paylaş</li><li>Beta test listesini güncelle</li><li>Cuma demo saatini netleştir</li></ul>'},
+  {f:'kisisel',t:now-D-3*H,h:'<div>Hafta sonu Kapadokya</div><div>Cumartesi sabah balon turu için 04:30’da kalkış.</div><ul><li>Göreme Açık Hava Müzesi</li><li>Uçhisar Kalesi’nde gün batımı</li><li>Avanos’ta çömlek atölyesi</li></ul>'},
+  {f:'tarif',t:now-3*D,h:'<div>Mercimek çorbası</div><div>4 kişilik · 35 dakika</div><h2>Malzemeler</h2><ul class="check"><li>1 su bardağı kırmızı mercimek</li><li>1 kuru soğan, 1 havuç</li><li>1 yemek kaşığı salça</li><li>6 su bardağı sıcak su</li></ul><h2>Yapılışı</h2><ol><li>Soğan ve havucu tereyağında kavur.</li><li>Salça ve mercimeği ekle, suyu dök.</li><li>25 dakika pişir, blenderdan geçir.</li></ol>'},
+  {f:'notlar',t:now-6*D,h:'<div>Okunacak kitaplar</div><ul class="check"><li class="done">Kürk Mantolu Madonna</li><li>Saatleri Ayarlama Enstitüsü</li><li>Tutunamayanlar</li></ul>'},
+  {f:'is',t:now-12*D,h:'<div>Tasarım fikirleri</div><div>Cam yüzeylerde metin kontrastı için zemini en az %55 opak tut. Geçişleri 400 ms altında tut, yay eğrisi kullan.</div>'},
+  {f:'kisisel',t:now-40*D,h:'<div>Hediye listesi</div><ul><li>Annem: seramik kupa seti</li><li>Ece: analog fotoğraf makinesi</li></ul>'}
+ ].map(o=>{const x={id:uid(),f:o.f,pin:!!o.pin,up:o.t,cr:o.t,html:o.h,del:0};meta(x);return x});
+ return{folders,notes};
+}
+let S=load()||seed();S.notes.forEach(n=>{if(!n.cr)n.cr=n.up});
+const PK='camnotlar.ayar',PD={mode:'auto',from:'20:00',to:'07:00',oled:false,theme:'amber',glass:'bal',motion:true,font:'sys',size:'m',sort:'up',group:true,preview:true};
+let P=Object.assign({},PD,(()=>{try{return JSON.parse(localStorage.getItem(PK))||{}}catch(e){return{}}})());
+const saveP=()=>{try{localStorage.setItem(PK,JSON.stringify(P))}catch(e){}};
+const dkey=()=>P.sort==='cr'?'cr':'up';
+const ui={view:'all',sel:null,q:'',mob:'list',editF:false,loaded:null};
+
+const F=o=>new Intl.DateTimeFormat('tr-TR',o);
+const fT=F({hour:'2-digit',minute:'2-digit'}),fD=F({day:'numeric',month:'short',year:'numeric'}),fM=F({month:'long',year:'numeric'}),fL=F({dateStyle:'long',timeStyle:'short'}),fW=F({weekday:'long'});
+const sod=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
+const ago=t=>Math.round((sod(Date.now())-sod(t))/D);
+const group=t=>{const d=ago(t);return d<1?'Bugün':d<2?'Dün':d<7?'Önceki 7 gün':d<30?'Önceki 30 gün':fM.format(t)};
+const short=t=>{const d=ago(t);return d<1?fT.format(t):d<2?'Dün':d<7?fW.format(t):fD.format(t)};
+
+function inView(n,v=ui.view){if(v==='trash')return!!n.del;if(n.del)return false;return v==='all'||(v==='pinned'?n.pin:n.f===v)}
+const count=v=>S.notes.filter(n=>inView(n,v)).length;
+const vname=(v=ui.view)=>v==='all'?'Tüm Notlar':v==='pinned'?'Sabitlenmiş':v==='trash'?'Son Silinenler':(S.folders.find(f=>f.id===v)||{}).name||'Notlar';
+const cur=()=>S.notes.find(n=>n.id===ui.sel);
+function visible(){const q=ui.q.trim().toLocaleLowerCase('tr');return S.notes.filter(n=>inView(n)).filter(n=>!q||plain(n.html).toLocaleLowerCase('tr').includes(q)).sort(P.sort==='ttl'?(a,b)=>a.title.localeCompare(b.title,'tr'):(a,b)=>b[dkey()]-a[dkey()])}
+
+function row(v,name,icon,extra=''){return`<div class="row${ui.view===v?' on':''}" data-v="${esc(v)}" role="button" tabindex="0">${ico(icon)}<span class="nm">${esc(name)}</span>${extra}<span class="ct">${count(v)}</span></div>`}
+function renderSide(){
+ const em=ui.editF;
+ $('#folders').innerHTML=`<div class="grp">${row('all','Tüm Notlar','notes')}${row('pinned','Sabitlenmiş','pin')}</div>
+ <p class="cap">Klasörlerim</p>${S.folders.length?`<div class="grp">${S.folders.map(f=>row(f.id,f.name,'folder',em?`<button class="mini" data-ren="${esc(f.id)}" aria-label="Yeniden adlandır">${ico('pen')}</button><button class="mini red" data-delf="${esc(f.id)}" aria-label="Klasörü sil">${ico('trash')}</button>`:'')).join('')}</div>`:'<p class="hint">Henüz klasör yok.</p>'}
+ <p class="cap"></p><div class="grp">${row('trash','Son Silinenler','trash')}</div>`;
+ $('#editF').textContent=em?'Bitti':'Düzenle';
+}
+function item(n){const showF=['all','pinned','trash'].includes(ui.view);return`<div class="item${n.id===ui.sel&&!mq.matches?' on':''}" data-id="${esc(n.id)}" role="button" tabindex="0"><div class="tt">${esc(n.title)}</div><div class="sn"><b>${esc(short(n[dkey()]))}</b><span class="sx">${esc(n.snip)}</span></div>${showF?`<div class="fd">${ico('folder')}${esc(vname(n.f))}</div>`:''}</div>`}
+function renderList(){
+ const L=visible();$('#lt').textContent=vname();
+ $('#cnt').textContent=L.length?L.length+' not':'Not yok';
+ const pins=['trash','pinned'].includes(ui.view)?[]:L.filter(n=>n.pin),groups=[];
+ if(pins.length)groups.push(['Sabitlenmiş',pins]);
+ const byDate=P.group&&P.sort!=='ttl',rest=pins.length&&!byDate?'Notlar':'';
+ L.filter(n=>!pins.includes(n)).forEach(n=>{const g=byDate?group(n[dkey()]):rest,last=groups[groups.length-1];if(last&&last[0]===g&&last[1]!==pins)last[1].push(n);else groups.push([g,[n]])});
+ let h=groups.map(([g,a])=>`<p class="cap">${esc(g)}</p><div class="grp">${a.map(item).join('')}</div>`).join('');
+ if(!L.length)h=`<div class="none">${ico(ui.q?'search':ui.view==='trash'?'trash':'notes')}<p>${ui.q?'“'+esc(ui.q)+'” için sonuç yok':ui.view==='trash'?'Son Silinenler boş':'Bu klasörde henüz not yok'}</p>${ui.q||ui.view==='trash'?'':'<button class="pill" data-act="new">Yeni Not</button>'}</div>`;
+ else if(ui.view==='trash')h='<p class="hint">Silinen notlar burada kalır; istediğin zaman geri alabilirsin.</p>'+h;
+ $('#notes').innerHTML=h+'<div style="height:16px"></div>';
+}
+function renderEditor(force){
+ const n=cur();app.classList.toggle('nonote',!n);app.classList.toggle('intrash',!!(n&&n.del));
+ $('#backL').textContent=vname();
+ if(!n){ui.loaded=null;ed.innerHTML='';return}
+ if(force||ui.loaded!==n.id){ed.innerHTML=n.html;ui.loaded=n.id;$('#sc').scrollTop=0}
+ ed.contentEditable=n.del?'false':'true';
+ $('#banner').hidden=!n.del;
+ $('#stamp').textContent=fL.format(n.up);
+ $('#wc').textContent=n.words+' kelime';
+ $('[data-act=pin]').classList.toggle('on',!!n.pin);
+}
+function render(){
+ if(!mq.matches){const L=visible();if(!L.some(n=>n.id===ui.sel))ui.sel=L[0]?L[0].id:null}
+ app.dataset.mob=ui.mob;renderSide();renderList();renderEditor();
+}
+function dropEmpty(){const n=cur();if(n&&!n.del&&!plain(n.html).trim()){S.notes=S.notes.filter(x=>x!==n);ui.sel=null;save()}}
+function caretEnd(){const r=document.createRange();r.selectNodeContents(ed);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+
+function newNote(){
+ dropEmpty();
+ if(!S.folders.length)S.folders.push({id:uid(),name:'Notlar'});
+ const f=S.folders.some(x=>x.id===ui.view)?ui.view:S.folders[0].id;
+ const n={id:uid(),f,pin:ui.view==='pinned',up:Date.now(),cr:Date.now(),html:'<div><br></div>',del:0};meta(n);S.notes.push(n);
+ if(ui.view==='trash')ui.view='all';ui.q='';$('#q').value='';ui.sel=n.id;ui.mob='note';save();render();renderEditor(true);
+ ed.focus();caretEnd();
+}
+function after(){ui.sel=null;if(mq.matches)ui.mob='list';save();render()}
+const A={
+ new:newNote,
+ settings:openSet,
+ night(){const d=!isDark();P.mode=d?'dark':'light';upd();toast(d?'Gece modu açık':'Gece modu kapalı')},
+ pin(){const n=cur();if(!n)return;n.pin=!n.pin;save();render();toast(n.pin?'Not sabitlendi':'Sabitleme kaldırıldı')},
+ move(){const n=cur();if(!n||!S.folders.length)return;ask({t:'Klasöre taşı',choices:S.folders.map(f=>({v:f.id,l:f.name,on:f.id===n.f}))}).then(v=>{if(!v)return;n.f=v;save();render();toast('“'+vname(v)+'” klasörüne taşındı')})},
+ copy(){const n=cur();if(!n)return;try{navigator.clipboard.writeText(plain(n.html).replace(/\n{3,}/g,'\n\n').trim()).then(()=>toast('Metin panoya kopyalandı'),()=>toast('Kopyalanamadı'))}catch(e){toast('Kopyalanamadı')}},
+ del(){const n=cur();if(!n)return;
+  if(n.del){ask({t:'Kalıcı olarak silinsin mi?',m:'“'+n.title+'” geri alınamayacak şekilde silinecek.',ok:'Sil',danger:1}).then(r=>{if(!r)return;S.notes=S.notes.filter(x=>x!==n);after()});return}
+  n.del=Date.now();after();toast('Son Silinenler’e taşındı','Geri Al',()=>{n.del=0;ui.sel=n.id;save();render();renderEditor(true)})},
+ restore(){const n=cur();if(!n)return;n.del=0;if(!S.folders.some(f=>f.id===n.f)){if(!S.folders.length)S.folders.push({id:uid(),name:'Notlar'});n.f=S.folders[0].id}save();render();toast('Not geri alındı')}
+};
+
+function ask(o){return new Promise(res=>{
+ const w=document.createElement('div');w.className='scrim';
+ w.innerHTML=`<form class="dlg" role="dialog" aria-modal="true"><h3>${esc(o.t)}</h3>${o.m?`<p>${esc(o.m)}</p>`:''}${o.input!=null?`<input class="fld" value="${esc(o.input)}" maxlength="40" placeholder="Klasör adı" aria-label="${esc(o.t)}">`:''}${o.choices?`<div class="chs">${o.choices.map(c=>`<button type="button" class="ch${c.on?' on':''}" data-c="${esc(c.v)}">${ico('folder')}${esc(c.l)}</button>`).join('')}</div>`:''}<div class="dbtn"><button type="button" class="cn">Vazgeç</button>${o.ok?`<button class="ok${o.danger?' red':''}">${esc(o.ok)}</button>`:''}</div></form>`;
+ document.body.append(w);const f=w.querySelector('form'),i=w.querySelector('input');let gone=false;
+ const done=v=>{if(gone)return;gone=true;w.classList.add('out');setTimeout(()=>w.remove(),180);res(v)};
+ f.onsubmit=e=>{e.preventDefault();done(i?i.value.trim():true)};
+ w.querySelector('.cn').onclick=()=>done(null);
+ w.onclick=e=>{if(e.target===w)done(null);const c=e.target.closest('[data-c]');if(c)done(c.dataset.c)};
+ w.onkeydown=e=>{if(e.key==='Escape')done(null)};
+ setTimeout(()=>{(i||f.querySelector('.ok,.ch.on,.ch,.cn')).focus();if(i)i.select()},40);
+})}
+let tt;
+function toast(m,a,fn){const t=$('#toast');t.innerHTML=esc(m)+(a?`<button>${esc(a)}</button>`:'');const b=t.querySelector('button');if(b)b.onclick=()=>{fn();t.classList.remove('show')};t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),4200)}
+
+/* biçimlendirme */
+function selLi(){const s=getSelection();if(!s.rangeCount)return null;let n=s.anchorNode;n=n&&(n.nodeType===1?n:n.parentElement);const li=n&&n.closest('li');return li&&ed.contains(li)?li:null}
+const inCheck=()=>{const li=selLi();return li&&li.parentElement.classList.contains('check')?li:null};
+function fmt(c){
+ if(ed.contentEditable!=='true')return;ed.focus();
+ if(c==='h'){const v=String(document.queryCommandValue('formatBlock')).toLowerCase();document.execCommand('formatBlock',false,v==='h2'?'div':'h2')}
+ else if(c==='check'){const li=selLi(),ul=li&&li.parentElement;if(ul&&ul.classList.contains('check'))document.execCommand('insertUnorderedList');else{if(!(ul&&ul.tagName==='UL'))document.execCommand('insertUnorderedList');const l=selLi();if(l)l.parentElement.classList.add('check')}}
+ else if(c==='insertUnorderedList'&&inCheck())inCheck().parentElement.classList.remove('check');
+ else document.execCommand(c);
+ ed.dispatchEvent(new Event('input'));refreshFmt();
+}
+function refreshFmt(){
+ if(document.activeElement!==ed)return;
+ const ck=!!inCheck();
+ document.querySelectorAll('[data-f]').forEach(b=>{const c=b.dataset.f;let on=false;
+  try{on=c==='h'?String(document.queryCommandValue('formatBlock')).toLowerCase()==='h2':c==='check'?ck:c==='insertUnorderedList'?!ck&&document.queryCommandState(c):document.queryCommandState(c)}catch(e){}
+  b.classList.toggle('on',on)});
+}
+document.addEventListener('selectionchange',refreshFmt);
+$('#fmt').addEventListener('mousedown',e=>{if(e.target.closest('[data-f]'))e.preventDefault()});
+$('#fmt').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b)fmt(b.dataset.f)});
+
+let tmr;
+ed.addEventListener('input',()=>{const n=cur();if(!n||n.del)return;n.html=ed.innerHTML;n.up=Date.now();meta(n);$('#stamp').textContent=fL.format(n.up);$('#wc').textContent=n.words+' kelime';clearTimeout(tmr);tmr=setTimeout(()=>{save();renderList();renderSide()},250)});
+ed.addEventListener('click',e=>{const li=e.target.closest('ul.check>li');if(!li||ed.contentEditable!=='true')return;if(e.clientX-li.getBoundingClientRect().left<30){li.classList.toggle('done');ed.dispatchEvent(new Event('input'))}});
+ed.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){const li=inCheck();if(li)setTimeout(()=>{const n=selLi();if(n&&n!==li)n.classList.remove('done')})}});
+ed.addEventListener('paste',e=>{e.preventDefault();document.execCommand('insertText',false,(e.clipboardData||{getData:()=>''}).getData('text/plain'))});
+
+/* gezinme */
+document.addEventListener('click',e=>{
+ const t=e.target;let x;
+ if(x=t.closest('[data-ren]')){e.stopPropagation();const f=S.folders.find(f=>f.id===x.dataset.ren);ask({t:'Klasörü yeniden adlandır',input:f.name,ok:'Kaydet'}).then(v=>{if(v){f.name=v;save();render()}});return}
+ if(x=t.closest('[data-delf]')){const f=S.folders.find(f=>f.id===x.dataset.delf),k=S.notes.filter(n=>n.f===f.id&&!n.del).length;ask({t:'“'+f.name+'” silinsin mi?',m:k?k+' not Son Silinenler’e taşınacak.':'Bu klasör boş.',ok:'Klasörü Sil',danger:1}).then(r=>{if(!r)return;S.notes.forEach(n=>{if(n.f===f.id&&!n.del)n.del=Date.now()});S.folders=S.folders.filter(y=>y!==f);if(ui.view===f.id)ui.view='all';save();render()});return}
+ if(x=t.closest('[data-act]')){const fn=A[x.dataset.act];if(fn)fn();return}
+ if(x=t.closest('.row')){dropEmpty();ui.view=x.dataset.v;ui.q='';$('#q').value='';ui.mob='list';if(!mq.matches)ui.sel=null;render();return}
+ if(x=t.closest('.item')){if(x.dataset.id!==ui.sel)dropEmpty();ui.sel=x.dataset.id;ui.mob='note';render();return}
+ if(x=t.closest('[data-go]')){if(x.dataset.go==='list'){ed.blur();dropEmpty()}ui.mob=x.dataset.go;render()}
+});
+document.addEventListener('keydown',e=>{
+ const t=e.target;
+ if(e.key==='Enter'&&t.matches&&t.matches('.row,.item')){t.click();return}
+ if(e.key==='Escape'&&!$('#set').hidden&&document.querySelectorAll('.scrim').length===1){closeSet();return}
+ if((e.ctrlKey||e.metaKey)&&e.key===','){e.preventDefault();openSet();return}
+ if(e.altKey&&e.code==='KeyN'){e.preventDefault();newNote();return}
+ if(e.key==='/'&&!t.isContentEditable&&!/INPUT|TEXTAREA/.test(t.tagName)){e.preventDefault();$('#q').focus()}
+});
+$('#q').addEventListener('input',e=>{ui.q=e.target.value;render()});
+$('#newF').addEventListener('click',()=>ask({t:'Yeni Klasör',m:'Bu klasör için bir ad gir.',input:'',ok:'Oluştur'}).then(v=>{if(!v)return;const f={id:uid(),name:v};S.folders.push(f);ui.view=f.id;ui.mob='list';ui.sel=null;save();render()}));
+$('#editF').addEventListener('click',()=>{ui.editF=!ui.editF;renderSide()});
+$('#tside').addEventListener('click',()=>app.classList.toggle('nos'));
+mq.addEventListener('change',render);
+const vv=window.visualViewport;if(vv){const f=()=>document.documentElement.style.setProperty('--vh',vv.height+'px');vv.addEventListener('resize',f);f()}
+/* ayarlar ve temalar */
+const SEG={mode:[['auto','Otomatik'],['light','Açık'],['dark','Gece'],['sched','Zamanlı']],glass:[['mat','Mat'],['bal','Dengeli'],['clear','Şeffaf']],font:[['sys','Sistem'],['serif','Serif'],['mono','Mono']],size:[['s','Küçük'],['m','Orta'],['l','Büyük']],sort:[['up','Düzenlenme'],['cr','Oluşturulma'],['ttl','Başlık']]};
+const TH=[['amber','Kehribar','#e8a900','#ffd36b'],['ocean','Okyanus','#0a84ff','#8fe3ff'],['forest','Orman','#30b15b','#d8f0a0'],['rose','Gül','#ff4f7b','#ffc9a8'],['lav','Lavanta','#8e6cf0','#ffc2e0'],['graphite','Grafit','#8e8e93','#e5e5ea']];
+const sysDark=matchMedia('(prefers-color-scheme: dark)');
+const toM=s=>{const[h,m]=String(s).split(':').map(Number);return(h||0)*60+(m||0)};
+function isNight(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),a=toM(P.from),b=toM(P.to);return a<=b?m>=a&&m<b:m>=a||m<b}
+function isDark(){const r=document.documentElement;if(r.dataset.mode)return r.dataset.mode==='dark';if(r.dataset.theme==='dark'||r.dataset.theme==='light')return r.dataset.theme==='dark';return sysDark.matches}
+function applyS(){
+ const r=document.documentElement;let m=P.mode;if(m==='sched')m=isNight()?'dark':'light';
+ if(m==='auto')delete r.dataset.mode;else r.dataset.mode=m;
+ r.dataset.accent=P.theme;r.dataset.glass=P.glass;r.dataset.font=P.font;r.dataset.size=P.size;
+ r.toggleAttribute('data-oled',!!P.oled);r.toggleAttribute('data-still',!P.motion);r.toggleAttribute('data-nopv',!P.preview);
+ const d=isDark();$('#night use').setAttribute('href',d?'#i-sun':'#i-moon');$('#night').title=d?'Gündüz moduna geç':'Gece moduna geç';
+}
+function renderSet(){
+ document.querySelectorAll('.seg[data-k]').forEach(s=>{const k=s.dataset.k;s.innerHTML=SEG[k].map(([v,l])=>`<button type="button" class="${P[k]===v?'on':''}" data-v="${v}" aria-pressed="${P[k]===v}">${l}</button>`).join('')});
+ $('#themes').innerHTML=TH.map(([v,l,c,b])=>`<button type="button" class="swt${P.theme===v?' on':''}" data-th="${v}" style="--c:${c}" aria-pressed="${P.theme===v}"><i style="background:linear-gradient(135deg,${b},${c})"></i>${l}</button>`).join('');
+ document.querySelectorAll('.sw[data-k]').forEach(i=>i.checked=!!P[i.dataset.k]);
+ $('#sched').hidden=P.mode!=='sched';$('#nFrom').value=P.from;$('#nTo').value=P.to;
+}
+function upd(){saveP();applyS();if(!$('#set').hidden)renderSet();render()}
+function openSet(){renderSet();$('#set').hidden=false;setTimeout(()=>$('#setX').focus(),40)}
+function closeSet(){$('#set').hidden=true}
+$('#setX').addEventListener('click',closeSet);
+$('#set').addEventListener('click',e=>{
+ if(e.target.id==='set'){closeSet();return}
+ const b=e.target.closest('.seg button');if(b){P[b.closest('.seg').dataset.k]=b.dataset.v;upd();return}
+ const t=e.target.closest('[data-th]');if(t){P.theme=t.dataset.th;upd()}
+});
+$('#set').addEventListener('change',e=>{const i=e.target;
+ if(i.matches('.sw'))P[i.dataset.k]=i.checked;else if(i.id==='nFrom')P.from=i.value||PD.from;else if(i.id==='nTo')P.to=i.value||PD.to;else return;upd()});
+function clean(h){const d=new DOMParser().parseFromString(String(h),'text/html');d.body.querySelectorAll('script,style,iframe,object,embed,link,meta,form,img,svg').forEach(x=>x.remove());d.body.querySelectorAll('*').forEach(x=>[...x.attributes].forEach(a=>{if(a.name!=='class')x.removeAttribute(a.name)}));return d.body.innerHTML}
+$('#exp').addEventListener('click',()=>{const j=JSON.stringify({app:'cam-notlar',v:1,folders:S.folders,notes:S.notes});try{navigator.clipboard.writeText(j).then(()=>toast('Yedek panoya kopyalandı'),()=>toast('Kopyalanamadı'))}catch(e){toast('Kopyalanamadı')}});
+$('#imp').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(!f)return;f.text().then(t=>{
+ let d;try{d=JSON.parse(t)}catch(x){toast('Dosya okunamadı');return}
+ if(!d||!Array.isArray(d.notes)||!Array.isArray(d.folders)){toast('Bu bir Cam Notlar yedeği değil');return}
+ ask({t:'Yedek geri yüklensin mi?',m:d.notes.length+' not mevcut notlarının yerini alacak.',ok:'Geri Yükle',danger:1}).then(r=>{if(!r)return;
+  S={folders:d.folders.filter(x=>x&&x.id).map(x=>({id:String(x.id),name:String(x.name||'Klasör').slice(0,40)})),
+     notes:d.notes.filter(x=>x&&x.id).map(x=>{const n={id:String(x.id),f:String(x.f||''),pin:!!x.pin,up:+x.up||Date.now(),cr:+x.cr||+x.up||Date.now(),html:clean(x.html||''),del:+x.del||0};meta(n);return n})};
+  ui.view='all';ui.sel=null;ui.loaded=null;save();render();toast('Yedek geri yüklendi')})})});
+$('#rs').addEventListener('click',()=>{const s=seed();s.folders.forEach(f=>{if(!S.folders.some(x=>x.id===f.id))S.folders.push(f)});S.notes.push(...s.notes);save();render();toast(s.notes.length+' örnek not eklendi')});
+$('#wipe').addEventListener('click',()=>ask({t:'Tüm notlar silinsin mi?',m:'Son Silinenler dahil her not kalıcı olarak silinecek. Klasörlerin kalır.',ok:'Hepsini Sil',danger:1}).then(r=>{if(!r)return;S.notes=[];ui.sel=null;ui.loaded=null;save();render();toast('Tüm notlar silindi')}));
+sysDark.addEventListener('change',applyS);
+new MutationObserver(applyS).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+setInterval(()=>{if(P.mode==='sched')applyS()},60000);
+applyS();
+if(!mq.matches&&innerWidth<1000)app.classList.add('nos');
+render();
+}
+</script>
+</body>
+</html>
