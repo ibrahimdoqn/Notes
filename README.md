@@ -10,7 +10,7 @@ Apple Notes tarzı, buzlu cam (glass) arayüzlü bir not uygulaması. Hedef: Doc
 | --- | --- |
 | [`prototype/index.html`](prototype/index.html) | Çalışan arayüz prototipi: tek HTML dosyası, bağımlılık yok |
 | [`docs/PLAN.md`](docs/PLAN.md) | Sunucu, web ve Android için ayrıntılı geliştirme planı |
-| `docs/img/` | Mimari ve yol haritası diyagramları |
+| `docs/img/` | Mimari diyagramı |
 
 ## Prototipi çalıştırma
 
@@ -30,7 +30,7 @@ Prototipte şunlar var:
 - **Ayarlar:** Otomatik / Açık / Gece / Zamanlı görünüm, saf siyah gece modu, 6 renk teması, cam yoğunluğu, yazı tipi ve boyutu, sıralama, yedekleme.
 - **Kısayollar:** `Alt+N` yeni not, `/` arama, `Ctrl+,` ayarlar.
 
-Notlar ve ayarlar şimdilik yalnızca tarayıcının `localStorage` alanında saklanır. Sunucu eşitlemesi plandaki 2. ve 3. aşamada gelecek.
+Notlar ve ayarlar şimdilik yalnızca tarayıcının `localStorage` alanında saklanır. Sunucu eşitlemesi plandaki uygulama sırasının 2. ve 3. adımında gelecek.
 
 ## Planlanan yapı
 
@@ -42,4 +42,4 @@ packages/shared/ ortak tipler ve HTML sözleşmesi
 deploy/          docker-compose.yml, Caddyfile, .env.example
 ```
 
-Ayrıntılar, takvim ve açık kararlar için [docs/PLAN.md](docs/PLAN.md) dosyasına bak.
+Ayrıntılar, uygulama sırası ve açık kararlar için [docs/PLAN.md](docs/PLAN.md) dosyasına bak.

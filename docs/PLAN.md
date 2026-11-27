@@ -4,7 +4,7 @@
 
 ## Özet
 
-Cam Notlar; Docker Compose ile tek komutla kurulan bir senkronizasyon sunucusu, çevrimdışı çalışan bir web uygulaması (PWA) ve yerel bir Android uygulamasından oluşacak. Üçü aynı REST API'yi ve aynı senkronizasyon protokolünü kullanır; ilk sürüm (v1.0) yaklaşık 14 haftada çıkar.
+Cam Notlar; Docker Compose ile tek komutla kurulan bir senkronizasyon sunucusu, çevrimdışı çalışan bir web uygulaması (PWA) ve yerel bir Android uygulamasından oluşacak. Üçü aynı REST API'yi ve aynı senkronizasyon protokolünü kullanır; plan bölüm bölüm sırayla Claude Code ile uygulanır.
 
 **Hedefler**
 
@@ -20,7 +20,7 @@ Cam Notlar; Docker Compose ile tek komutla kurulan bir senkronizasyon sunucusu, 
 - Android: Kotlin + Jetpack Compose, yerel veritabanı Room, arka plan eşitleme WorkManager.
 - Senkronizasyon: istemci önce yerel veritabanına yazar, değişiklikleri sırayla sunucuya iter; çakışmada "son yazan kazanır" + çakışma kopyası.
 
-**Kapsam dışı (v1.0):** gerçek zamanlı ortak düzenleme, uçtan uca şifreleme ve iOS uygulaması. Bunlar yol haritasında v1.x/v2 olarak duruyor.
+**Kapsam dışı (v1.0):** gerçek zamanlı ortak düzenleme, uçtan uca şifreleme ve iOS uygulaması. Bunlar sonraki sürümlere bırakıldı.
 
 ## Mimari genel bakış
 
@@ -213,11 +213,11 @@ Uygulama Kotlin + Jetpack Compose ile yerel yazılır; minimum Android 8.0 (API 
 - Hızlı ayarlar kutucuğu ve uygulama kısayolları: Yeni not, Yeni kontrol listesi.
 - Bildirim: yalnızca eşitleme hatası kalıcıysa; anlık eşitleme için FCM sessiz itme (isteğe bağlı, kendi sunucusunu kuran FCM anahtarı girmezse WorkManager yeterli).
 
-**Dağıtım:** imzalı AAB ile Google Play (dahili test → kapalı test → üretim) ve GitHub Releases'te APK; F-Droid için FCM'siz derleme türü (`foss` flavor).
+**Dağıtım:** imzalı APK GitHub Releases'te; Google Play yayını istenirse sonra eklenir; F-Droid için FCM'siz derleme türü (`foss` flavor).
 
 ## Test, CI/CD ve izleme
 
-Her çekme isteği GitHub Actions'ta üç uygulamayı da derleyip test eder; `main`'e birleşen her sürüm etiketi Docker imajını, web paketini ve Android AAB'yi otomatik üretir.
+Her çekme isteği GitHub Actions'ta üç uygulamayı da derleyip test eder; `main`'e birleşen her sürüm etiketi Docker imajını, web paketini ve Android APK'yı otomatik üretir.
 
 | Alan | Araç | Ne test edilir |
 | --- | --- | --- |
@@ -228,28 +228,26 @@ Her çekme isteği GitHub Actions'ta üç uygulamayı da derleyip test eder; `ma
 | Ortak HTML sözleşmesi | `packages/shared/fixtures/*.html` | Web ve Android aynı örneklerle dönüşüm testi |
 | Güvenlik | npm audit, Trivy (imaj taraması), OWASP ZAP temel tarama | Bilinen açıklar, başlıklar |
 
-**Boru hattı:** lint → tip kontrolü → testler → derleme → (etikette) `ghcr.io`'ya çoklu mimari imaj (amd64 + arm64, Raspberry Pi için) → web paketi imaja gömülür → Android AAB imzalanıp Play dahili test kanalına yüklenir (Gradle Play Publisher).
+**Boru hattı:** lint → tip kontrolü → testler → derleme → (etikette) `ghcr.io`'ya çoklu mimari imaj (amd64 + arm64, Raspberry Pi için) → web paketi imaja gömülür → Android APK imzalanıp GitHub Releases'e eklenir.
 
 **İzleme:** API yapılandırılmış JSON günlük yazar (pino); `/metrics` Prometheus biçiminde (istek süresi, eşitleme gecikmesi, çakışma sayısı). İsteğe bağlı `docker-compose.monitoring.yml` ile Prometheus + Grafana + Uptime Kuma. İstemci hataları için kendi barındırılan GlitchTip (Sentry uyumlu), varsayılan kapalı.
 
-## Yol haritası
+## Uygulama sırası
 
-![Yol haritası](img/yol-haritasi.png)
+Plan tarihe bağlı değil: adımlar aşağıdaki sırayla Claude Code ile uygulanır, her adım kendi otomatik testleri geçince bir sonrakine geçilir. Tüm adımlar bitince uygulamayı sen kendin denersin; ayrı bir beta süreci yok.
 
-Tek geliştirici için yaklaşık 14 hafta (başlangıç 7 Aralık 2026 varsayımıyla v1.0: 15 Mart 2027); iki kişilik ekipte web ve Android paralel yürürse 9–10 haftaya iner. Her aşama aşağıdaki çıkış ölçütüyle kapanır.
+1. **Hazırlık:** monorepo iskeleti, CI, OpenAPI taslağı, ortak HTML sözleşmesi ve fixture dosyaları.
+2. **Sunucu çekirdeği + Docker:** veri modeli, kimlik doğrulama, push/pull eşitleme ve `docker-compose.yml`. Temiz makinede `docker compose up -d` ile kalkar; API ve eşitleme testleri yeşil.
+3. **Web PWA:** prototip Vite projesine taşınır, IndexedDB ve eşitleme bağlanır. Playwright testleri iki sekme + çevrimdışı senaryosunu geçer.
+4. **Android uygulaması:** Compose arayüz, Room ve WorkManager ile eşitleme. Editör dönüşüm ve UI testleri geçer, imzalı APK üretilir.
+5. **Ekler, not geçmişi, yedekleme, izleme:** iki istemcide resim ekleri, geçmişten geri yükleme ve yedekten geri yükleme betiği test edilmiş.
+6. **Senin denemen:** sunucuyu kurup web ve Android'den kullanırsın; bulduğun sorunlar yeni adımlar olarak eklenir.
 
-1. **Hazırlık:** monorepo, CI iskeleti, OpenAPI taslağı, ortak HTML sözleşmesi ve fixture dosyaları hazır.
-2. **Sunucu çekirdeği:** `docker compose up -d` ile temiz makinede kurulup kayıt, giriş, push/pull ve çakışma testleri yeşil.
-3. **Web PWA:** iki tarayıcı sekmesi ve bir çevrimdışı dönem sonrasında aynı notları görüyor; mevcut temalar ve gece modu taşınmış.
-4. **Android:** web ile aynı hesapta çift yönlü eşitleme, editör dönüşüm testleri geçiyor, Play dahili test kanalında.
-5. **Ekler, geçmiş, yedek:** resim ekleri iki istemcide, not geçmişinden geri yükleme, gece yedeğinden geri yükleme denenmiş.
-6. **Beta:** 5–10 kişilik test grubu 2 hafta kullanıyor; veri kaybı hatası sıfır, açık kritik hata yok.
-
-**v1.x sonrası:** 2FA ve kilitli notlar (v1.1), tablet düzeni ve widget iyileştirmeleri (v1.2), gerçek zamanlı ortak düzenleme ve uçtan uca şifreleme (v2).
+**Sonraki sürümler:** 2FA ve kilitli notlar, tablet düzeni ve widget iyileştirmeleri, gerçek zamanlı ortak düzenleme ve uçtan uca şifreleme.
 
 ## Riskler ve açık kararlar
 
-En büyük teknik risk zengin metnin web ve Android arasında birebir korunması; bu yüzden ortak HTML sözleşmesi ve test örnekleri 1. haftada sabitlenir.
+En büyük teknik risk zengin metnin web ve Android arasında birebir korunması; bu yüzden ortak HTML sözleşmesi ve test örnekleri ilk adımda sabitlenir.
 
 | Risk | Etki | Önlem |
 | --- | --- | --- |
@@ -263,7 +261,7 @@ En büyük teknik risk zengin metnin web ve Android arasında birebir korunması
 **Karar verilmesi gerekenler**
 
 - [ ] Tek kullanıcı (sadece sen/aile) mı, yoksa açık kayıtlı çok kullanıcılı hizmet mi? Tek kullanıcıysa Redis ve MinIO çıkarılıp kurulum 3 servise iner.
-- [ ] Android yerel (Kotlin/Compose) mi, yoksa web'i Capacitor ile sarmak mı? Capacitor Android süresini yaklaşık 5 haftadan 2 haftaya indirir, ama widget, paylaş menüsü ve editör hissi zayıflar.
+- [ ] Android yerel (Kotlin/Compose) mi, yoksa web'i Capacitor ile sarmak mı? Capacitor Android tarafını çok kısaltır, ama widget, paylaş menüsü ve editör hissi zayıflar.
 - [ ] Sunucu nerede çalışacak: evde (Raspberry Pi/NAS) mi, VPS'te mi? Alan adı ve HTTPS yöntemi buna göre seçilir.
 - [ ] Uygulama adı "Cam Notlar" kalıyor mu? Play Store kaydı ve paket adı (`com.camnotlar.app`) için erken gerekli.
 - [ ] Google Play'de yayınlanacak mı, yoksa yalnızca APK mı? Play için geliştirici hesabı ve gizlilik politikası sayfası gerekir.
