@@ -82,12 +82,12 @@ describe('eşitleme simülatörü', () => {
   for (const seed of [1, 7, 42]) {
     it(`3 istemci, rastgele çevrimdışı aralıklar (tohum ${seed})`, async () => {
       const rand = rng(seed);
-      const first = new Client(env.app, 'sim-0');
+      const first = new Client(env.app, 'sim-0', env.db);
       const cred = await first.register();
       const clients = [new SimClient(first, 'sim-0')];
       for (let i = 1; i < 3; i++) {
         const c = new Client(env.app, `sim-${i}`);
-        await c.login(cred.email, cred.password);
+        await c.login(cred.username, cred.password);
         clients.push(new SimClient(c, `sim-${i}`));
       }
       let k = 0;

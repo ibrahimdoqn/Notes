@@ -1,65 +1,52 @@
-import { randomBytes } from 'node:crypto';
-import { isUuid, uuidv7, type AuthResponse, type Device, type Platform, type User } from '@camnotlar/shared';
+import { isUuid, normalizeUsername, USERNAME_RE, uuidv7, type AuthResponse, type Device, type Platform, type User } from '@camnotlar/shared';
 import { tx, type Db, type Queryable } from '../db/pool.ts';
-import { ApiError, badRequest, unauthorized } from '../lib/errors.ts';
+import { ApiError, unauthorized } from '../lib/errors.ts';
 import type { Ctx } from '../context.ts';
 import { logChange } from '../sync/log.ts';
 import { checkPassword, dummyVerify, hashPassword, verifyPassword } from './password.ts';
 import { newRefreshToken, sha256 } from './tokens.ts';
 
-interface UserRow { id: string; email: string; password_hash: string; display_name: string; is_admin: boolean; created_at: Date }
+export interface UserRow { id: string; username: string; password_hash: string; display_name: string; is_admin: boolean; created_at: Date }
 
 export const toUser = (r: UserRow): User => ({
-  id: r.id, email: r.email, displayName: r.display_name, isAdmin: r.is_admin, createdAt: r.created_at.getTime(),
+  id: r.id, username: r.username, displayName: r.display_name, isAdmin: r.is_admin, createdAt: r.created_at.getTime(),
 });
 
-export const normEmail = (e: unknown): string => {
-  const s = typeof e === 'string' ? e.trim().toLowerCase() : '';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) || s.length > 254) throw badRequest('Geçerli bir e-posta adresi gir.');
+export const normUsername = (u: unknown): string => {
+  const s = normalizeUsername(u);
+  if (!USERNAME_RE.test(s)) {
+    throw new ApiError(400, 'invalid_username', 'Kullanıcı adı 3–32 karakter olmalı; küçük harf, rakam, nokta, tire ve alt çizgi içerebilir.');
+  }
   return s;
 };
 
-const cleanName = (s: unknown, def: string, max = 60) => (typeof s === 'string' && s.trim() ? s.trim().slice(0, max) : def);
+export const cleanName = (s: unknown, def: string, max = 60) => (typeof s === 'string' && s.trim() ? s.trim().slice(0, max) : def);
 
 export async function createUser(
-  db: Queryable, email: string, password: string, opts: { displayName?: string; isAdmin?: boolean; hibp: boolean },
+  db: Queryable, username: string, password: string, opts: { displayName?: string; isAdmin?: boolean; hibp: boolean },
 ): Promise<User> {
-  const e = normEmail(email);
+  const u = normUsername(username);
   await checkPassword(password, opts.hibp);
   const id = uuidv7();
   const ph = await hashPassword(password);
   try {
     const { rows } = await db.query<UserRow>(
-      'INSERT INTO users(id, email, password_hash, display_name, is_admin) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [id, e, ph, cleanName(opts.displayName, e.split('@')[0] ?? ''), !!opts.isAdmin],
+      'INSERT INTO users(id, username, password_hash, display_name, is_admin) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [id, u, ph, cleanName(opts.displayName, u), !!opts.isAdmin],
     );
     const folderId = uuidv7();
     await db.query("INSERT INTO folders(id, user_id, name, sort_order) VALUES ($1, $2, 'Notlar', 0)", [folderId, id]);
     await logChange(db, id, 'folder', folderId, 1, 'upsert');
     return toUser(rows[0] as UserRow);
   } catch (err) {
-    if ((err as { code?: string }).code === '23505') throw new ApiError(409, 'email_taken', 'Bu e-posta ile zaten bir hesap var.');
+    if ((err as { code?: string }).code === '23505') throw new ApiError(409, 'username_taken', 'Bu kullanıcı adı zaten alınmış.');
     throw err;
   }
 }
 
-/** Davet kodunu doğrular ve kullanılmış işaretler. */
-export async function consumeInvite(db: Queryable, code: unknown, email: string): Promise<void> {
-  if (typeof code !== 'string' || !code) throw new ApiError(403, 'signup_closed', 'Bu sunucuda kayıt kapalı; bir davet kodu gerekiyor.');
-  const { rowCount } = await db.query(
-    `UPDATE invites SET used_at = now() WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now()
-       AND (email IS NULL OR email = $2)`,
-    [sha256(code.trim()), email],
-  );
-  if (!rowCount) throw new ApiError(403, 'invalid_invite', 'Davet kodu geçersiz ya da süresi dolmuş.');
-}
-
-export async function createInvite(db: Queryable, email: string | null, by: string | null, days = 7): Promise<string> {
-  const code = randomBytes(12).toString('base64url');
-  await db.query('INSERT INTO invites(code_hash, email, created_by, expires_at) VALUES ($1,$2,$3, now() + make_interval(days => $4))', [
-    sha256(code), email, by, days,
-  ]);
-  return code;
+export async function userCount(db: Queryable): Promise<number> {
+  const r = await db.query<{ n: number }>('SELECT count(*)::int AS n FROM users');
+  return r.rows[0]?.n ?? 0;
 }
 
 interface SessionOut { response: AuthResponse; refreshToken: string }
@@ -96,26 +83,30 @@ export async function openSession(
 }
 
 export async function login(ctx: Ctx, body: Record<string, unknown>): Promise<SessionOut> {
-  const email = normEmail(body.email);
+  const username = normalizeUsername(body.username);
   const pw = typeof body.password === 'string' ? body.password : '';
-  const { rows } = await ctx.db.query<UserRow>('SELECT * FROM users WHERE email=$1', [email]);
+  const { rows } = await ctx.db.query<UserRow>('SELECT * FROM users WHERE username=$1', [username]);
   const row = rows[0];
   if (!row) {
     await dummyVerify(pw);
-    throw new ApiError(401, 'invalid_credentials', 'E-posta ya da parola hatalı.');
+    throw new ApiError(401, 'invalid_credentials', 'Kullanıcı adı ya da parola hatalı.');
   }
-  if (!(await verifyPassword(row.password_hash, pw))) throw new ApiError(401, 'invalid_credentials', 'E-posta ya da parola hatalı.');
+  if (!(await verifyPassword(row.password_hash, pw))) throw new ApiError(401, 'invalid_credentials', 'Kullanıcı adı ya da parola hatalı.');
   return tx(ctx.db, (c) =>
     openSession(ctx, c, toUser(row), { id: body.deviceId as string, name: body.deviceName, platform: body.platform }),
   );
 }
 
-export async function register(ctx: Ctx, body: Record<string, unknown>): Promise<SessionOut> {
-  const email = normEmail(body.email);
+/**
+ * İlk kurulum: hiç kullanıcı yokken ilk yönetici hesabı açılır ve oturum başlar.
+ * Tablo kilidi, aynı anda gelen iki kurulum isteğinden yalnızca birinin geçmesini sağlar.
+ */
+export async function setup(ctx: Ctx, body: Record<string, unknown>): Promise<SessionOut> {
   return tx(ctx.db, async (c) => {
-    if (!ctx.cfg.allowSignup) await consumeInvite(c, body.inviteCode, email);
-    const user = await createUser(c, email, String(body.password ?? ''), {
-      displayName: body.displayName as string, hibp: ctx.cfg.hibpCheck,
+    await c.query('LOCK TABLE users IN EXCLUSIVE MODE');
+    if ((await userCount(c)) > 0) throw new ApiError(409, 'setup_done', 'Sunucu zaten kurulmuş; yöneticiyle giriş yap.');
+    const user = await createUser(c, String(body.username ?? ''), String(body.password ?? ''), {
+      displayName: body.displayName as string, isAdmin: true, hibp: ctx.cfg.hibpCheck,
     });
     return openSession(ctx, c, user, { id: body.deviceId as string, name: body.deviceName, platform: body.platform });
   });

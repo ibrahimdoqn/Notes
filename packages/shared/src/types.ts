@@ -98,7 +98,7 @@ export interface PullResponse {
 
 export interface User {
   id: string;
-  email: string;
+  username: string;
   displayName: string;
   isAdmin: boolean;
   createdAt: number;
@@ -113,7 +113,7 @@ export interface Device {
 }
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
   deviceName: string;
   platform: Platform;
@@ -121,9 +121,34 @@ export interface LoginRequest {
   deviceId?: string;
 }
 
-export interface RegisterRequest extends LoginRequest {
+/** İlk kurulum: hiç kullanıcı yokken ilk yönetici hesabı. */
+export interface SetupRequest extends LoginRequest {
   displayName?: string;
-  inviteCode?: string;
+}
+
+/** Yönetim arayüzünden kullanıcı oluşturma / güncelleme. */
+export interface AdminUserInput {
+  username?: string;
+  password?: string;
+  displayName?: string;
+  isAdmin?: boolean;
+}
+
+export interface AdminUser extends User {
+  notes: number;
+  attachmentBytes: number;
+  lastSeenAt: number | null;
+  devices: number;
+}
+
+/** Not içindeki ek: dosya sunucuda diskte, kaydı veritabanında. */
+export interface Attachment {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  sha256: string;
+  createdAt: number;
 }
 
 export interface AuthResponse {
@@ -148,7 +173,9 @@ export interface Revision {
 export interface ServerInfo {
   name: 'camnotlar';
   apiVersion: number;
-  allowSignup: boolean;
+  /** Hiç kullanıcı yoksa true: /yonetim sayfasından ilk yönetici oluşturulur. */
+  needsSetup: boolean;
+  maxAttachmentBytes: number;
 }
 
 /** Bu istemci sürümünün konuştuğu API sürümü. Sunucu daha yeniyse istemci uyarı gösterir. */

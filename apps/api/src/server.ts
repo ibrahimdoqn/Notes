@@ -4,6 +4,7 @@ import { migrate } from './db/migrate.ts';
 import { createSigner } from './auth/tokens.ts';
 import { Hub } from './lib/hub.ts';
 import { buildApp } from './app.ts';
+import { AttachmentStore } from './attachments/store.ts';
 
 const cfg = loadConfig();
 const db = createPool(cfg.databaseUrl);
@@ -24,7 +25,7 @@ async function waitForDb(tries = 30): Promise<void> {
 await waitForDb();
 await migrate(db, (m) => console.log(m));
 const signer = await createSigner(cfg.jwtPrivateKey, cfg.accessTtlSec, (m) => console.warn(m));
-const app = await buildApp({ cfg, db, signer, hub: new Hub() });
+const app = await buildApp({ cfg, db, signer, hub: new Hub(), attachments: new AttachmentStore(cfg.attachmentsDir) });
 
 const stop = async () => {
   await app.close();

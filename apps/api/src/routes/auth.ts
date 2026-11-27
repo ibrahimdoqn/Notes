@@ -25,19 +25,20 @@ export default async function authRoutes(app: FastifyInstance, ctx: Ctx) {
   }
   const isWeb = (body: Record<string, unknown>) => body.platform !== 'android';
 
-  // Giriş/kayıt: IP + e-posta başına 15 dakikada 10 deneme.
+  // Giriş: IP + kullanıcı adı başına 15 dakikada 10 deneme.
   const limited = {
     config: {
       rateLimit: {
         max: 10, timeWindow: '15 minutes',
-        keyGenerator: (req: FastifyRequest) => `${req.ip}:${String((req.body as { email?: string })?.email ?? '').toLowerCase()}`,
+        keyGenerator: (req: FastifyRequest) => `${req.ip}:${String((req.body as { username?: string })?.username ?? '').toLowerCase()}`,
       },
     },
   };
 
-  app.post('/v1/auth/register', { ...limited, schema: { body: loginBody, response: { 200: authResponse } } }, async (req, reply) => {
+  /** İlk kurulum: hiç kullanıcı yokken ilk yönetici hesabı (yönetim sayfasından). Sonra kapanır. */
+  app.post('/v1/setup', { ...limited, schema: { body: loginBody, response: { 200: authResponse } } }, async (req, reply) => {
     const body = req.body as Record<string, unknown>;
-    return send(req, reply, await auth.register(ctx, body), isWeb(body));
+    return send(req, reply, await auth.setup(ctx, body), isWeb(body));
   });
 
   app.post('/v1/auth/login', { ...limited, schema: { body: loginBody, response: { 200: authResponse } } }, async (req, reply) => {
@@ -97,15 +98,5 @@ export default async function authRoutes(app: FastifyInstance, ctx: Ctx) {
     if (!(await auth.revokeDevice(ctx.db, req.auth.sub, id))) throw notFound('Cihaz bulunamadı.');
     ctx.hub.kick(req.auth.sub, id);
     return { ok: true };
-  });
-
-  app.post('/v1/invites', {
-    preHandler: guard,
-    schema: { body: { type: ['object', 'null'], properties: { email: { type: 'string' }, days: { type: 'integer', minimum: 1, maximum: 90 } } } },
-  }, async (req, reply) => {
-    if (!req.auth.adm) return reply.code(403).send({ error: { code: 'forbidden', message: 'Yalnızca yönetici davet oluşturabilir.' } });
-    const b = (req.body ?? {}) as { email?: string; days?: number };
-    const email = b.email ? auth.normEmail(b.email) : null;
-    return { code: await auth.createInvite(ctx.db, email, req.auth.sub, b.days ?? 7) };
   });
 }

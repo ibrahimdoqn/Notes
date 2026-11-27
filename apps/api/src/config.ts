@@ -4,7 +4,8 @@ export interface Config {
   host: string;
   databaseUrl: string;
   jwtPrivateKey: string | undefined;
-  allowSignup: boolean;
+  attachmentsDir: string;
+  maxAttachmentBytes: number;
   hibpCheck: boolean;
   trashRetentionDays: number;
   tombstoneRetentionDays: number;
@@ -32,7 +33,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       env.DATABASE_URL ??
       (pw ? `postgres://camnotlar:${encodeURIComponent(pw)}@db:5432/camnotlar` : 'postgres://postgres@localhost:5432/camnotlar'),
     jwtPrivateKey: env.JWT_PRIVATE_KEY?.replace(/\\n/g, '\n') || undefined,
-    allowSignup: bool(env.ALLOW_SIGNUP, false),
+    attachmentsDir: env.ATTACHMENTS_DIR ?? '/data/attachments',
+    maxAttachmentBytes: int(env.MAX_ATTACHMENT_MB, 25) * 1024 * 1024,
     hibpCheck: bool(env.HIBP_CHECK, true),
     trashRetentionDays: int(env.TRASH_RETENTION_DAYS, 30),
     tombstoneRetentionDays: int(env.TOMBSTONE_RETENTION_DAYS, 90),

@@ -6,7 +6,8 @@ import { loadConfig } from './config.ts';
 import { createPool } from './db/pool.ts';
 import { migrate } from './db/migrate.ts';
 import { cleanup } from './jobs/cleanup.ts';
-import { backup } from './jobs/backup.ts';
+import { backup, backupAttachments } from './jobs/backup.ts';
+import { AttachmentStore } from './attachments/store.ts';
 
 const cfg = loadConfig();
 const db = createPool(cfg.databaseUrl);
@@ -16,7 +17,7 @@ const backupsOn = process.env.BACKUP_ENABLED !== 'false';
 
 async function runCleanup() {
   try {
-    log('temizlik tamam', await cleanup(db, cfg.trashRetentionDays, cfg.tombstoneRetentionDays));
+    log('temizlik tamam', await cleanup(db, cfg.trashRetentionDays, cfg.tombstoneRetentionDays, new AttachmentStore(cfg.attachmentsDir)));
   } catch (e) {
     log('temizlik hatası', { error: (e as Error).message });
   }
@@ -24,7 +25,7 @@ async function runCleanup() {
 
 async function runBackup() {
   try {
-    log('yedek alındı', { file: await backup(cfg.databaseUrl, cfg.backupDir) });
+    log('yedek alındı', { file: await backup(cfg.databaseUrl, cfg.backupDir), attachments: await backupAttachments(cfg.attachmentsDir, cfg.backupDir) });
   } catch (e) {
     log('yedek hatası', { error: (e as Error).message });
   }

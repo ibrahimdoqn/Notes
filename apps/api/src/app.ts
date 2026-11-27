@@ -10,6 +10,9 @@ import { requireAuth } from './auth/guard.ts';
 import { ApiError } from './lib/errors.ts';
 import { tx } from './db/pool.ts';
 import { applySettings } from './sync/settings.ts';
+import { userCount } from './auth/service.ts';
+import adminRoutes from './routes/admin.ts';
+import attachmentRoutes from './routes/attachments.ts';
 import authRoutes from './routes/auth.ts';
 import noteRoutes from './routes/notes.ts';
 import syncRoutes from './routes/sync.ts';
@@ -61,7 +64,9 @@ export async function buildApp(ctx: Ctx, opts: { logger?: boolean | object } = {
       return reply.code(503).send({ ok: false });
     }
   });
-  app.get('/v1/info', async (): Promise<ServerInfo> => ({ name: 'camnotlar', apiVersion: API_VERSION, allowSignup: ctx.cfg.allowSignup }));
+  app.get('/v1/info', async (): Promise<ServerInfo> => ({
+    name: 'camnotlar', apiVersion: API_VERSION, needsSetup: (await userCount(ctx.db)) === 0, maxAttachmentBytes: ctx.cfg.maxAttachmentBytes,
+  }));
 
   app.put('/v1/settings', { preHandler: requireAuth(ctx), schema: { body: { type: 'object', additionalProperties: true } } }, async (req) => {
     const out = await tx(ctx.db, (c) => applySettings(c, req.auth.sub, {
@@ -74,5 +79,7 @@ export async function buildApp(ctx: Ctx, opts: { logger?: boolean | object } = {
   await app.register(async (s) => authRoutes(s, ctx));
   await app.register(async (s) => syncRoutes(s, ctx));
   await app.register(async (s) => noteRoutes(s, ctx));
+  await app.register(async (s) => adminRoutes(s, ctx));
+  await app.register(async (s) => attachmentRoutes(s, ctx));
   return app;
 }

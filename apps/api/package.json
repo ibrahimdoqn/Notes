@@ -10,7 +10,7 @@
     "worker": "node dist/worker.js",
     "migrate": "tsx src/cli/migrate.ts",
     "admin:create": "node dist/cli/admin.js create",
-    "invite": "node dist/cli/admin.js invite",
+    "reset-password": "node dist/cli/admin.js reset-password",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

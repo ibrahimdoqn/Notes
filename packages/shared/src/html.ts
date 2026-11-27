@@ -4,12 +4,14 @@
  *   blok:   div, h2, ul, ol, li, br
  *   satır:  b, i, u, s
  *   sınıf:  ul.check (kontrol listesi), li.done (işaretli madde)
+ *   ekler:  <img class="att" data-att="UUID" alt="ad">           (resim)
+ *           <span class="file" data-att="UUID">dosya.pdf</span>  (diğer dosyalar)
  *
  * Aynı kurallar sunucuda (kayıtta), web'de (yapıştırma / yedek geri yükleme)
  * ve test örneklerinde kullanılır. DOM gerektirmez; Node ve tarayıcıda çalışır.
  */
 
-export const ALLOWED_TAGS = ['div', 'h2', 'ul', 'ol', 'li', 'br', 'b', 'i', 'u', 's'] as const;
+export const ALLOWED_TAGS = ['div', 'h2', 'ul', 'ol', 'li', 'br', 'b', 'i', 'u', 's', 'img', 'span'] as const;
 export const ALLOWED_CLASSES: Record<string, readonly string[]> = { ul: ['check'], li: ['done'] };
 
 type Tag = (typeof ALLOWED_TAGS)[number];
@@ -25,7 +27,20 @@ const VOID = new Set(['br', 'hr', 'img', 'input', 'meta', 'link', 'wbr', 'area',
 const BLOCK = new Set(['div', 'h2', 'ul', 'ol', 'li', 'br']);
 
 const TOKEN_RE = /<!--[\s\S]*?(?:-->|$)|<!\[CDATA\[[\s\S]*?(?:\]\]>|$)|<![^>]*>?|<\?[^>]*>?|<\/?([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?)*)\s*\/?>/g;
-const CLASS_RE = /(?:^|\s)class\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i;
+const attrRe = (name: string) => new RegExp(`(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i');
+const CLASS_RE = attrRe('class');
+const ATT_RE = attrRe('data-att');
+const ALT_RE = attrRe('alt');
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const attr = (re: RegExp, attrs: string): string | null => {
+  const m = re.exec(attrs);
+  return m ? decodeEntities(m[1] ?? m[2] ?? m[3] ?? '') : null;
+};
+/** Ek kimliği (data-att) geçerli bir UUID ise küçük harfle döner. */
+const attId = (attrs: string): string | null => {
+  const v = attr(ATT_RE, attrs);
+  return v && UUID_RE.test(v) ? v.toLowerCase() : null;
+};
 const ENTITY_RE = /&(#\d{1,7}|#x[0-9a-f]{1,6}|[a-z][a-z0-9]{1,31});/gi;
 
 const NAMED: Record<string, string> = {
@@ -101,6 +116,19 @@ export function sanitizeNoteHtml(input: string, maxLength = 1_000_000): string {
       continue;
     }
     if (raw === 'hr' && t.kind === 'open') { out.push('<br>'); continue; }
+    if (raw === 'img') {
+      // Yalnızca ek resimleri: src gibi dış adresler hiçbir zaman saklanmaz.
+      const id = t.kind === 'open' ? attId(t.attrs ?? '') : null;
+      if (id) out.push(`<img class="att" data-att="${id}" alt="${escapeHtml((attr(ALT_RE, t.attrs ?? '') ?? '').slice(0, 200))}">`);
+      continue;
+    }
+    if (raw === 'span') {
+      // Dosya eki rozeti; diğer span'ler açılıp metni korunur.
+      const id = t.kind === 'open' ? attId(t.attrs ?? '') : null;
+      if (t.kind === 'open' && id && !stack.includes('span')) { out.push(`<span class="file" data-att="${id}">`); stack.push('span'); }
+      else if (t.kind === 'close' && stack[stack.length - 1] === 'span') { out.push('</span>'); stack.pop(); }
+      continue;
+    }
     const tag = (ALLOWED.has(raw) ? raw : ALIAS[raw]) as Tag | undefined;
     if (!tag) continue;
     if (tag === 'br') { if (t.kind === 'open') out.push('<br>'); continue; }
@@ -150,4 +178,14 @@ export function noteMeta(html: string): NoteMeta {
   return { title, snippet, plain: lines.join('\n'), words };
 }
 
-export const isBlankHtml = (html: string): boolean => htmlToPlain(html).trim() === '';
+/** Metni ve eki olmayan not boş sayılır (yalnızca resim içeren not boş değildir). */
+export const isBlankHtml = (html: string): boolean => htmlToPlain(html).trim() === '' && !/data-att=/i.test(html);
+
+/** HTML'de geçen ek kimlikleri. */
+export function attachmentIds(html: string): string[] {
+  const ids = new Set<string>();
+  for (const m of String(html ?? '').matchAll(/data-att="([0-9a-f-]{36})"/gi)) ids.add((m[1] as string).toLowerCase());
+  return [...ids];
+}
+
+export const isImageMime = (m: string) => /^image\/(png|jpe?g|gif|webp|avif|heic|heif|bmp)$/i.test(m);

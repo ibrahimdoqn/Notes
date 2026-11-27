@@ -11,10 +11,10 @@ beforeAll(async () => {
 afterAll(() => env.close());
 
 async function pair() {
-  const a = new Client(env.app, 'Masaüstü');
+  const a = new Client(env.app, 'Masaüstü', env.db);
   const cred = await a.register();
   const b = new Client(env.app, 'Pixel 8');
-  await b.login(cred.email, cred.password);
+  await b.login(cred.username, cred.password);
   return { a, b };
 }
 
@@ -73,7 +73,7 @@ describe('push / pull', () => {
 
   it('başka kullanıcının not kimliğine yazılamaz', async () => {
     const { a } = await pair();
-    const other = new Client(env.app);
+    const other = new Client(env.app, 'Test', env.db);
     await other.register();
     const n = note('<div>gizli</div>');
     await a.push([n]);

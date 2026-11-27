@@ -1,19 +1,22 @@
 import type { Db } from '../db/pool.ts';
 import { tx } from '../db/pool.ts';
 import { logChange } from '../sync/log.ts';
+import { orphanAttachments, type AttachmentStore } from '../attachments/store.ts';
 
 export interface CleanupResult {
   purgedTrash: number;
   purgedTombstones: number;
   expiredSessions: number;
+  removedAttachments: number;
 }
 
 /**
  * Gece işi:
  * - Son Silinenler'de `trashDays` günden uzun kalan notları kalıcı siler (silme izi bırakır).
- * - `tombstoneDays` günden eski silme izlerini, süresi dolmuş oturumları ve davetleri tamamen kaldırır.
+ * - `tombstoneDays` günden eski silme izlerini ve süresi dolmuş oturumları tamamen kaldırır.
+ * - Hiçbir notta kullanılmayan ekleri (bir günden eskiyse) diskten siler.
  */
-export async function cleanup(db: Db, trashDays: number, tombstoneDays: number): Promise<CleanupResult> {
+export async function cleanup(db: Db, trashDays: number, tombstoneDays: number, store?: AttachmentStore): Promise<CleanupResult> {
   const purgedTrash = await tx(db, async (c) => {
     const r = await c.query<{ id: string; user_id: string; version: number }>(
       `UPDATE notes SET deleted_at=now(), html='', title='', snippet='', plain_text='', version=version+1
@@ -29,6 +32,14 @@ export async function cleanup(db: Db, trashDays: number, tombstoneDays: number):
   const t1 = await db.query('DELETE FROM notes WHERE deleted_at < now() - make_interval(days => $1)', [tombstoneDays]);
   const t2 = await db.query('DELETE FROM folders f WHERE deleted_at < now() - make_interval(days => $1) AND NOT EXISTS (SELECT 1 FROM notes n WHERE n.folder_id=f.id)', [tombstoneDays]);
   const s = await db.query(`DELETE FROM sessions WHERE expires_at < now() - interval '7 days' OR revoked_at < now() - interval '7 days'`);
-  await db.query(`DELETE FROM invites WHERE expires_at < now() - interval '30 days'`);
-  return { purgedTrash, purgedTombstones: (t1.rowCount ?? 0) + (t2.rowCount ?? 0), expiredSessions: s.rowCount ?? 0 };
+  // Hiçbir notta (ve not geçmişinde) geçmeyen ekler: kayıt ve dosya silinir.
+  let removedAttachments = 0;
+  if (store) {
+    for (const a of await orphanAttachments(db)) {
+      await db.query('DELETE FROM attachments WHERE id=$1', [a.id]);
+      await store.remove(a.id);
+      removedAttachments++;
+    }
+  }
+  return { purgedTrash, purgedTombstones: (t1.rowCount ?? 0) + (t2.rowCount ?? 0), expiredSessions: s.rowCount ?? 0, removedAttachments };
 }

@@ -47,3 +47,13 @@ describe('HTML sözleşmesi', () => {
     expect(htmlToPlain('<div>A &amp; B</div><div>C</div>')).toBe('A & B\nC\n');
   });
 });
+
+describe('ekler', () => {
+  it('yalnızca resimli not boş sayılmaz, kimlikler bulunur', async () => {
+    const { isBlankHtml, attachmentIds } = await import('../src/html.ts');
+    const html = '<div><img class="att" data-att="01a21c30-0000-7000-8000-0000000000aa" alt=""></div>';
+    expect(isBlankHtml(html)).toBe(false);
+    expect(attachmentIds(read('attachments.html'))).toEqual(['01a21c30-0000-7000-8000-0000000000aa', '01a21c30-0000-7000-8000-0000000000bb']);
+    expect(noteMeta(read('attachments.html')).snippet).toBe('Ek: fatura.pdf');
+  });
+});

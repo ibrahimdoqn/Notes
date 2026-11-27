@@ -8,12 +8,18 @@ import { loadConfig, type Config } from '../src/config.ts';
 import { migrate } from '../src/db/migrate.ts';
 import { createPool, type Db } from '../src/db/pool.ts';
 import { Hub } from '../src/lib/hub.ts';
+import { AttachmentStore } from '../src/attachments/store.ts';
+import { createUser } from '../src/auth/service.ts';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /** Testler gerçek PostgreSQL'e karşı çalışır; her test dosyası kendi geçici veritabanını kurar. */
 const ADMIN_URL = process.env.TEST_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
 
 export interface TestEnv {
   app: FastifyInstance;
+  attachments: AttachmentStore;
   db: Db;
   cfg: Config;
   hub: Hub;
@@ -28,15 +34,17 @@ export async function setup(overrides: Partial<Config> = {}): Promise<TestEnv> {
   await admin.query(`CREATE DATABASE ${name}`);
   await admin.end();
   const url = ADMIN_URL.replace(/\/[^/]*$/, `/${name}`);
-  const cfg: Config = { ...loadConfig({}), databaseUrl: url, allowSignup: true, hibpCheck: false, secureCookies: false, ...overrides };
+  const attachmentsDir = mkdtempSync(join(tmpdir(), 'camnotlar-att-'));
+  const cfg: Config = { ...loadConfig({}), databaseUrl: url, hibpCheck: false, secureCookies: false, attachmentsDir, maxAttachmentBytes: 1024 * 1024, ...overrides };
   const db = createPool(url);
   await migrate(db);
   const hub = new Hub();
   const signer = await createSigner(undefined, cfg.accessTtlSec, () => {});
-  const app = await buildApp({ cfg, db, signer, hub }, { logger: false });
+  const attachments = new AttachmentStore(cfg.attachmentsDir);
+  const app = await buildApp({ cfg, db, signer, hub, attachments }, { logger: false });
   await app.ready();
   return {
-    app, db, cfg, hub, url,
+    app, db, cfg, hub, url, attachments,
     async close() {
       await app.close();
       await db.end();
@@ -56,25 +64,30 @@ export class Client {
   userId = '';
   seq = 0;
 
-  constructor(private app: FastifyInstance, public deviceName = 'Test cihazı') {}
+  constructor(private app: FastifyInstance, public deviceName = 'Test cihazı', private db?: Db) {}
 
-  async req<T = unknown>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: unknown): Promise<{ status: number; body: T }> {
+  async req<T = unknown>(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown, headers: Record<string, string> = {},
+  ): Promise<{ status: number; body: T; headers: Record<string, unknown>; raw: Buffer }> {
     const res = await this.app.inject({
       method, url, payload: payload as object,
-      headers: this.token ? { authorization: `Bearer ${this.token}` } : {},
+      headers: { ...(this.token ? { authorization: `Bearer ${this.token}` } : {}), ...headers },
     });
-    return { status: res.statusCode, body: res.body ? (JSON.parse(res.body) as T) : (undefined as T) };
+    const ct = String(res.headers['content-type'] ?? '');
+    if (!ct.includes('json')) return { status: res.statusCode, body: undefined as T, headers: res.headers, raw: res.rawPayload };
+    return { status: res.statusCode, body: res.body ? (JSON.parse(res.body) as T) : (undefined as T), headers: res.headers, raw: res.rawPayload };
   }
 
-  async register(email = `u${randomBytes(4).toString('hex')}@ornek.com`, password = 'cok-gizli-parola-1') {
-    const r = await this.req<AuthResponse>('POST', '/v1/auth/register', { email, password, deviceName: this.deviceName, platform: 'android' });
-    if (r.status !== 200) throw new Error(`kayıt başarısız: ${JSON.stringify(r.body)}`);
-    this.adopt(r.body);
-    return { email, password };
+  /** Kullanıcıyı doğrudan veritabanında oluşturur (yönetim arayüzünün yaptığı) ve giriş yapar. */
+  async register(username = `u${randomBytes(4).toString('hex')}`, password = 'cok-gizli-parola-1', isAdmin = false) {
+    if (!this.db) throw new Error('register için Client(db) gerekir');
+    await createUser(this.db, username, password, { isAdmin, hibp: false });
+    await this.login(username, password);
+    return { username, password };
   }
 
-  async login(email: string, password: string) {
-    const r = await this.req<AuthResponse>('POST', '/v1/auth/login', { email, password, deviceName: this.deviceName, platform: 'android' });
+  async login(username: string, password: string) {
+    const r = await this.req<AuthResponse>('POST', '/v1/auth/login', { username, password, deviceName: this.deviceName, platform: 'android' });
     if (r.status !== 200) throw new Error(`giriş başarısız: ${JSON.stringify(r.body)}`);
     this.adopt(r.body);
   }

@@ -7,7 +7,7 @@ export const errorSchema = {
 export const userSchema = {
   type: 'object',
   properties: {
-    id: { type: 'string' }, email: { type: 'string' }, displayName: { type: 'string' }, isAdmin: { type: 'boolean' },
+    id: { type: 'string' }, username: { type: 'string' }, displayName: { type: 'string' }, isAdmin: { type: 'boolean' },
     createdAt: { type: 'number' },
   },
 } as const;
@@ -31,11 +31,11 @@ export const noteSchema = {
 
 export const loginBody = {
   type: 'object',
-  required: ['email', 'password'],
+  required: ['username', 'password'],
   properties: {
-    email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 1024 },
+    username: { type: 'string', maxLength: 64 }, password: { type: 'string', maxLength: 1024 },
     deviceName: { type: 'string', maxLength: 60 }, platform: { type: 'string', enum: ['web', 'android'] },
-    deviceId: { type: 'string' }, displayName: { type: 'string', maxLength: 60 }, inviteCode: { type: 'string', maxLength: 100 },
+    deviceId: { type: 'string' }, displayName: { type: 'string', maxLength: 60 },
   },
 } as const;
 

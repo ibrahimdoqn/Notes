@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { createWriteStream, mkdirSync, readdirSync, renameSync, statSync, unlinkSync } from 'node:fs';
+import { copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
@@ -48,4 +48,25 @@ export function prune(dir: string, daily = 7, weekly = 4): string[] {
     }
   }
   return removed;
+}
+
+/**
+ * Ek dosyalarını yedek klasörüne aynalar (<backupDir>/attachments). Ekler değişmediği için
+ * yalnızca yeni dosyalar kopyalanır; silinen ekler yedekte kalır (geri yükleme güvenliği).
+ */
+export function backupAttachments(srcDir: string, backupDir: string): number {
+  if (!existsSync(srcDir)) return 0;
+  const dst = join(backupDir, 'attachments');
+  let copied = 0;
+  for (const sub of readdirSync(srcDir)) {
+    const from = join(srcDir, sub);
+    if (!statSync(from).isDirectory()) continue;
+    mkdirSync(join(dst, sub), { recursive: true });
+    for (const f of readdirSync(from)) {
+      if (f.endsWith('.part') || existsSync(join(dst, sub, f))) continue;
+      copyFileSync(join(from, f), join(dst, sub, f));
+      copied++;
+    }
+  }
+  return copied;
 }
