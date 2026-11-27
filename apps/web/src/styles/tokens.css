@@ -1,0 +1,30 @@
+/* VOICE: sakin, özenli, Apple Notes gibi sessiz bir araç
+   IDEA: renkli bir masanın üstüne konmuş buzlu cam yapraklar
+   PICTURE: uygulamanın kendisi — klasör, liste, not; arkada yavaşça kayan sıcak ışık
+   COLOUR and TYPE: kehribar vurgu, şeftali ve gök mavisi ışık; SF / Inter, 4 boyut
+   LAYOUT: masaüstünde 3 cam sütun, mobilde iOS gibi kayan tek ekran */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4efe4,#0b0c10);--ink:light-dark(#1c1c1e,#f2f2f7);--sub:light-dark(#6e6e73,#98989f);
+--ga:.52;--blur:30px;--fs:17px;--edf:inherit;--accOn:#1c1c1e;
+--glass:light-dark(rgb(255 255 255/var(--ga)),rgb(28 28 34/var(--ga)));--glass2:light-dark(rgb(255 255 255/calc(var(--ga) + .18)),rgb(44 44 52/calc(var(--ga) + .1)));
+--glassM:light-dark(rgb(250 248 243/calc(var(--ga) + .22)),rgb(16 16 20/calc(var(--ga) + .22)));
+--line:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.09));--edge:light-dark(rgba(255,255,255,.95),rgba(255,255,255,.13));
+--acc:#e8a900;--accInk:light-dark(#a37400,#ffcc40);--sel:light-dark(rgba(232,169,0,.2),rgba(255,204,64,.18));
+--hl:#f6c43c;--red:#ff3b30;--sh:0 24px 70px light-dark(rgba(80,50,0,.16),rgba(0,0,0,.55));
+--b1:light-dark(#ffc94d,#8a5a00);--b2:light-dark(#ff9d7e,#7a2f22);--b3:light-dark(#8fd0ff,#123f66)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root[data-mode=light]{color-scheme:light}:root[data-mode=dark]{color-scheme:dark}
+/* temalar */
+:root[data-accent=ocean]{--acc:#0a84ff;--accInk:light-dark(#0062cc,#64b5ff);--sel:light-dark(rgba(10,132,255,.16),rgba(10,132,255,.24));--hl:#a9d4ff;--accOn:#fff;--b1:light-dark(#7cc4ff,#0b3a6b);--b2:light-dark(#9eefdf,#0d4a44);--b3:light-dark(#bcd6ff,#1a2f66)}
+:root[data-accent=forest]{--acc:#30b15b;--accInk:light-dark(#1d7a3c,#62d68e);--sel:light-dark(rgba(48,177,91,.16),rgba(48,177,91,.24));--hl:#b2e8c2;--b1:light-dark(#a6e3a1,#16432a);--b2:light-dark(#ffe08a,#4a3a0c);--b3:light-dark(#8fd6c8,#0f3d38)}
+:root[data-accent=rose]{--acc:#ff4f7b;--accInk:light-dark(#c42a55,#ff86a5);--sel:light-dark(rgba(255,79,123,.15),rgba(255,79,123,.22));--hl:#ffbccd;--accOn:#fff;--b1:light-dark(#ffb3c6,#5c1a2c);--b2:light-dark(#ffcf9e,#5a2e12);--b3:light-dark(#ffd9e8,#3d1730)}
+:root[data-accent=lav]{--acc:#8e6cf0;--accInk:light-dark(#5e3fc9,#bba5ff);--sel:light-dark(rgba(142,108,240,.16),rgba(142,108,240,.26));--hl:#d3c6ff;--accOn:#fff;--b1:light-dark(#c9b8ff,#2e2366);--b2:light-dark(#ffc2e0,#4d1d3d);--b3:light-dark(#a8d8ff,#173a5c)}
+:root[data-accent=graphite]{--acc:#8e8e93;--accInk:light-dark(#3a3a3c,#d1d1d6);--sel:light-dark(rgba(0,0,0,.08),rgba(255,255,255,.12));--hl:#d6d6db;--accOn:#fff;--b1:light-dark(#dcdce1,#2a2a30);--b2:light-dark(#c9ccd3,#1f2228);--b3:light-dark(#e8e3da,#2b2924)}
+:root[data-glass=mat]{--ga:.84;--blur:40px}:root[data-glass=clear]{--ga:.26;--blur:16px}
+:root[data-font=serif]{--edf:"Iowan Old Style","New York",Georgia,"Times New Roman",serif}
+:root[data-font=mono]{--edf:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+:root[data-size=s]{--fs:15px}:root[data-size=l]{--fs:20px}
+:root[data-oled]{--bg:light-dark(#f4efe4,#000);--glass:light-dark(rgb(255 255 255/var(--ga)),rgb(0 0 0/calc(var(--ga) + .2)));--glass2:light-dark(rgb(255 255 255/calc(var(--ga) + .18)),rgb(18 18 20/calc(var(--ga) + .2)));--glassM:light-dark(rgb(250 248 243/calc(var(--ga) + .22)),rgb(0 0 0/.88))}
+:root[data-oled] .bg::after{content:"";position:absolute;inset:0;background:light-dark(transparent,rgba(0,0,0,.62))}
+:root[data-still] .bg i{animation:none}
+:root[data-nopv] .sx{display:none}

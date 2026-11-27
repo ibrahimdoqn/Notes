@@ -1,0 +1,44 @@
+/* yerleşim */
+.app{position:fixed;left:0;right:0;top:0;height:var(--vh,100dvh);z-index:1;display:grid;grid-template-columns:240px 330px minmax(0,1fr);gap:12px;padding:12px}
+.app.nos{grid-template-columns:330px minmax(0,1fr)}.app.nos .side{display:none}
+.pane{position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--glass);-webkit-backdrop-filter:blur(var(--blur)) saturate(180%);backdrop-filter:blur(var(--blur)) saturate(180%);border:1px solid var(--line);border-radius:22px;transition:background .3s;box-shadow:var(--sh),inset 0 1px 0 var(--edge)}
+.side{background:light-dark(rgba(255,255,255,.38),rgba(22,22,28,.45))}
+.ph{display:flex;align-items:center;gap:6px;min-height:52px;padding:10px 12px 4px}
+.sp{flex:1}
+.lights{display:flex;gap:8px;padding-left:6px}.lights i{width:12px;height:12px;border-radius:50%;background:#ff5f57;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.big{margin:0;padding:2px 18px 8px;font-size:22px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.side .big{font-size:13px;color:var(--sub);font-weight:600;padding:6px 20px 6px}
+.scrollv{flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.ibtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--accInk);transition:background .15s}
+.ibtn:hover,.fb:hover{background:var(--line)}.ibtn.on{background:var(--sel)}
+.txtbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:10px;color:var(--accInk);font-weight:500}
+.txtbtn:hover{background:var(--line)}
+.back{display:none;align-items:center;gap:2px;color:var(--accInk);font-size:17px;padding:8px 6px 8px 2px;min-height:44px}
+.back .i{width:26px;height:26px;stroke-width:2.2}
+.cap{margin:14px 0 4px;padding:0 22px;font-size:12px;font-weight:600;color:var(--sub)}
+.hint{margin:6px 22px 4px;font-size:13px;color:var(--sub)}
+.grp{display:flex;flex-direction:column;gap:2px;padding:0 10px}
+/* klasör satırları */
+.row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;min-height:36px;transition:background .15s}
+.row:hover{background:var(--line)}.row.on{background:var(--sel)}
+.row>.i{color:var(--accInk)}.row[data-v=trash]>.i{color:var(--sub)}
+.row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.row .ct{color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+.mini{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--sub)}.mini:hover{background:var(--line)}.mini .i{width:16px;height:16px}.mini.red{color:var(--red)}
+.pf{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line)}
+/* arama */
+.search{display:flex;align-items:center;gap:6px;margin:0 14px 8px;padding:0 10px;height:36px;border-radius:11px;background:light-dark(rgba(118,118,128,.12),rgba(118,118,128,.24));color:var(--sub)}
+.search .i{width:17px;height:17px}
+.search input{flex:1;border:0;background:none;outline:none;font-size:16px;color:var(--ink);height:100%}
+.search input::placeholder{color:var(--sub)}
+/* not listesi */
+.item{position:relative;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background .15s}
+.item:hover{background:var(--line)}
+.item.on{background:var(--hl);color:#1c1c1e}.item.on .sn,.item.on .fd{color:rgba(0,0,0,.6)}
+.tt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sn{color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.sn b{font-weight:500;color:inherit;margin-right:6px;filter:brightness(.8)}
+.fd{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);margin-top:3px}.fd .i{width:13px;height:13px}
+.none{display:grid;place-items:center;text-align:center;gap:6px;padding:60px 24px;color:var(--sub)}
+.none .i{width:44px;height:44px;stroke-width:1.2;opacity:.6}.none p{margin:0}
+.pill{margin-top:8px;padding:10px 18px;border-radius:999px;background:var(--acc);color:var(--accOn);font-weight:600}

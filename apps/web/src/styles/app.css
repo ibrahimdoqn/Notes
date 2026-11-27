@@ -1,0 +1,56 @@
+/* prototipten sonra eklenenler: giriş, eşitleme durumu, cihazlar, not geçmişi */
+.fb-h{font-weight:700}.fb-b{font-weight:800}.fb-i{font-style:italic;font-family:Georgia,serif}
+.fb-u{text-decoration:underline}.fb-s{text-decoration:line-through}
+.strong{font-weight:600}.spacer44{width:44px}.center{justify-content:center;text-align:center}
+/* eşitleme durumu */
+.sync{display:flex;align-items:center;gap:6px;margin:0 10px 6px;padding:6px 10px;border-radius:10px;font-size:12px;color:var(--sub);cursor:pointer}
+.sync .i{width:15px;height:15px;flex:none}
+.sync:hover{background:var(--line)}
+.sync[data-s=error]{color:var(--red)}.sync[data-s=syncing] .i{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.lsync{display:none}
+/* giriş ekranı */
+.auth{z-index:25}
+.authsheet{width:min(400px,100%);padding:26px 22px 18px;gap:6px}
+.authhead{display:grid;justify-items:center;text-align:center;gap:4px;margin-bottom:10px}
+.authhead h2{margin:4px 0 0;font-size:26px;letter-spacing:-.02em}.authhead p{margin:0;color:var(--sub);font-size:14px}
+.logo{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,var(--b1),var(--acc));color:var(--accOn);box-shadow:var(--sh)}
+.logo .i{width:34px;height:34px}
+.authseg{margin:6px 0 8px}
+.flbl{display:block;font-size:13px;font-weight:500;color:var(--sub);margin-top:4px}
+.flbl .fld{color:var(--ink);font-weight:400}
+.aerr{min-height:20px;margin:6px 2px 2px;color:var(--red);font-size:13px}
+.aerr:empty{min-height:4px}
+.pill.wide{width:100%;margin-top:4px;height:46px;font-size:16px}
+.pill:disabled{opacity:.6;cursor:progress}
+.authsheet .txtbtn.center{width:100%;margin-top:6px}
+.authsheet .hint{margin:8px 0 0}
+/* cihazlar */
+.dev{display:flex;align-items:center;gap:12px;min-height:52px;padding:6px 10px}
+.dev+.dev{box-shadow:inset 0 1px 0 var(--line)}
+.dev>.i{color:var(--accInk)}.dev>span{flex:1}.dev small{display:block;color:var(--sub);font-size:13px}
+.dev .tag{font-size:12px;color:var(--accInk);font-weight:600}
+.dev button{color:var(--red);font-weight:500;padding:6px 8px;border-radius:8px}.dev button:hover{background:var(--line)}
+/* not geçmişi */
+.hist{width:min(820px,100%)}
+.hbody{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:0;flex:1;overflow:hidden}
+.hlist{border-right:1px solid var(--line);overflow:auto;padding:8px}
+.hitem{display:block;width:100%;padding:9px 10px;border-radius:10px;text-align:left}
+.hitem:hover{background:var(--line)}.hitem.on{background:var(--sel)}
+.hitem b{display:block;font-size:14px;font-weight:600}.hitem small{color:var(--sub);font-size:12px}
+.hprev{overflow:auto;padding:18px 22px}
+.hprev .ed{min-height:0}
+.hprev ins{background:light-dark(rgba(52,199,89,.22),rgba(52,199,89,.3));text-decoration:none;border-radius:3px}
+.hprev del{background:light-dark(rgba(255,59,48,.16),rgba(255,59,48,.26));border-radius:3px}
+.hfoot{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--line)}
+.hfoot button{height:40px;padding:0 16px;border-radius:11px;background:var(--line);font-weight:600}
+.hfoot .ok{background:var(--acc);color:var(--accOn)}
+.hlegend{display:flex;gap:12px;font-size:12px;color:var(--sub);margin:0 0 10px}
+@media(max-width:760px){
+ .hbody{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+ .hlist{border-right:0;border-bottom:1px solid var(--line);max-height:30vh}
+ .sync{margin:0;padding:4px 6px}
+ .authsheet{border-radius:22px 22px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+}
+.lend{height:16px}
+.hfoot .srow{width:auto;min-height:0;padding:0 8px}

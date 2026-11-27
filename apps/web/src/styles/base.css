@@ -1,0 +1,16 @@
+/* temel öğeler */
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* arka plan ışığı */
+.bg{position:fixed;inset:0;overflow:hidden;z-index:0}
+.bg i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.85;animation:drift 26s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:52vmax;height:52vmax;background:var(--b1);left:-12vmax;top:-14vmax}
+.bg i:nth-child(2){width:44vmax;height:44vmax;background:var(--b2);right:-10vmax;bottom:-16vmax;animation-delay:-9s}
+.bg i:nth-child(3){width:34vmax;height:34vmax;background:var(--b3);right:18vw;top:-10vmax;animation-delay:-17s;opacity:.6}
+@keyframes drift{to{transform:translate(6vmax,5vmax) scale(1.12)}}

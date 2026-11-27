@@ -1,0 +1,28 @@
+/* editör */
+.edit{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"fmt fmt act" "ban ban ban" "sc sc sc" "ef ef ef"}
+.fmt{grid-area:fmt;display:flex;align-items:center;gap:2px;padding:10px 12px;overflow-x:auto;scrollbar-width:none}
+.fmt::-webkit-scrollbar{display:none}
+.act{grid-area:act;display:flex;align-items:center;gap:2px;padding:10px 12px}
+.fb{flex:none;min-width:36px;height:36px;padding:0 8px;border-radius:10px;display:grid;place-items:center;font-size:16px;transition:background .15s}
+.fb.on{background:var(--sel);color:var(--accInk)}
+.sep{width:1px;height:20px;background:var(--line);margin:0 6px;flex:none}
+.banner{grid-area:ban;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 14px 6px;padding:10px 14px;border-radius:12px;background:var(--sel);font-size:14px}
+.banner span{flex:1 1 200px}.banner button{font-weight:600;color:var(--accInk)}.banner .red{color:var(--red)}
+#sc{grid-area:sc;border-top:1px solid var(--line)}
+.paper{max-width:740px;margin:0 auto;padding:14px clamp(20px,5vw,56px) 90px}
+.stamp{margin:0 0 14px;text-align:center;font-size:12px;color:var(--sub)}
+.ed{outline:none;font-family:var(--edf);font-size:var(--fs);line-height:1.6;min-height:60vh;caret-color:var(--acc);overflow-wrap:anywhere}
+.ed::first-line{font-size:1.65em;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.ed h2{font-size:20px;margin:18px 0 4px;letter-spacing:-.01em}
+.ed ul,.ed ol{margin:4px 0;padding-left:26px}.ed li{margin:3px 0}
+.ed ul.check{list-style:none;padding-left:0}
+.ed ul.check>li{position:relative;padding-left:32px;transition:color .2s}
+.ed ul.check>li::before{content:"";position:absolute;left:0;top:.18em;width:20px;height:20px;border-radius:50%;border:1.6px solid var(--sub);cursor:pointer;transition:all .2s}
+.ed ul.check>li.done{color:var(--sub);text-decoration:line-through;text-decoration-color:rgba(128,128,128,.5)}
+.ed ul.check>li.done::before{background:var(--acc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat;border-color:var(--acc)}
+.ef{grid-area:ef;display:flex;justify-content:flex-end;padding:6px 16px;font-size:12px;color:var(--sub);border-top:1px solid var(--line)}
+.empty{grid-area:sc;display:none;place-items:center;text-align:center;color:var(--sub);padding:24px}
+.empty .i{width:56px;height:56px;stroke-width:1.1;opacity:.5;margin-bottom:8px}
+.nonote .empty{display:grid}.nonote #sc,.nonote .ef{display:none}
+.nonote .fmt,.nonote .act,.intrash .fmt{opacity:.35;pointer-events:none}
+.edit>.back{display:none}

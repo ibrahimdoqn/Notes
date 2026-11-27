@@ -1,0 +1,18 @@
+{
+  "name": "Cam Notlar",
+  "short_name": "Cam Notlar",
+  "description": "Buzlu cam arayüzlü, çevrimdışı çalışan ve kendi sunucunla eşitlenen not uygulaması.",
+  "lang": "tr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4efe4",
+  "theme_color": "#e8a900",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [{ "name": "Yeni not", "url": "/?new=1" }]
+}
