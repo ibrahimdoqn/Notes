@@ -1,0 +1,13 @@
+{
+  "name": "camnotlar",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/shared", "apps/api", "apps/web"],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "lint:lines": "node scripts/check-lines.mjs"
+  },
+  "engines": { "node": ">=22" }
+}

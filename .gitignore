@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+deploy/.env
+deploy/data/
+test-results/
+playwright-report/
+# Android
+apps/android/.gradle/
+apps/android/build/
+apps/android/app/build/
+apps/android/local.properties
+apps/android/*.jks
+apps/android/keystore.properties
+.idea/
+*.iml

@@ -1,0 +1,38 @@
+{
+  "name": "@camnotlar/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "node build.mjs",
+    "start": "node dist/server.js",
+    "worker": "node dist/worker.js",
+    "migrate": "tsx src/cli/migrate.ts",
+    "admin:create": "node dist/cli/admin.js create",
+    "invite": "node dist/cli/admin.js invite",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "@types/pg": "^8.23.1",
+    "@types/ws": "^8.18.2",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2",
+    "ws": "^8.23.0"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/rate-limit": "^11.3.0",
+    "@fastify/swagger": "^9.9.5",
+    "@fastify/swagger-ui": "^6.1.5",
+    "@fastify/websocket": "^11.3.7",
+    "@node-rs/argon2": "^2.2.2",
+    "fastify": "^5.12.8",
+    "jose": "^6.2.18",
+    "pg": "^8.23.1"
+  }
+}
