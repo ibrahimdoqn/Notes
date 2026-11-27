@@ -168,9 +168,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Giriş/kayıt. Hata mesajı döner; başarıda null. */
     suspend fun authenticate(server: String, username: String, password: String): String? {
         return try {
-            val info = c.api.info(server)
+            val (url, info) = c.api.resolveServer(server)
             if (info.needsSetup) return "Bu sunucu henüz kurulmadı; önce tarayıcıda /yonetim/ sayfasından yönetici hesabını oluştur."
-            c.api.setServer(server)
+            c.api.setServer(url)
             repo.setMeta("maxAttachmentBytes", info.maxAttachmentBytes.toString())
             val prev = c.session.value
             val deviceId = repo.meta("deviceId")
@@ -213,6 +213,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         c.setSession(null)
     }
 
-    suspend fun serverInfo(server: String) = runCatching { c.api.info(server) }
+    suspend fun serverInfo(server: String) = runCatching { c.api.resolveServer(server) }
     fun lastServer(): String = c.api.baseUrl
 }

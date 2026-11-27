@@ -22,7 +22,7 @@ Plandaki "Karar verilmesi gerekenler" listesi için şu varsayılanlarla ilerlen
 - **Android yerel (Kotlin/Compose):** widget, paylaş menüsü ve kısayollar bu yüzden mümkün oldu.
 - **Uygulama adı / paket:** "Cam Notlar", `com.camnotlar.app`.
 - **Dağıtım:** imzalı APK GitHub Releases'e (CI etikette üretir); Play yayını yok.
-- **Sunucu yeri:** her ikisi desteklenir; imajlar amd64 + arm64 (Raspberry Pi).
+- **Sunucu yeri:** yerel ağ (ör. NanoPi R4S / OpenWrt) ya da VPS; imajlar amd64 + arm64. `init.sh` erişim türünü (yerel HTTP varsayılan, yerel HTTPS, internet) ve portu sorar; tek port yayınlanır (varsayılan 8080, OpenWrt arayüzüyle çakışmasın diye).
 
 ## Planla bilinçli farklar
 

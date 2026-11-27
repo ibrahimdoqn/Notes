@@ -110,6 +110,26 @@ class ApiClient(private val store: SecureStore) {
         parse(http.newCall(req).execute(), ServerInfo.serializer())
     }
 
+    /**
+     * Kullanıcının yazdığı adresi çözer. Şema yazılmadıysa ("192.168.1.1:8080") önce HTTPS,
+     * olmazsa HTTP denenir; yerel ağda HTTP ile kurulan sunucular böylece doğrudan bulunur.
+     */
+    suspend fun resolveServer(input: String): Pair<String, ServerInfo> {
+        val t = input.trim().trimEnd('/')
+        val candidates = if (t.startsWith("http://") || t.startsWith("https://")) listOf(t) else listOf("https://$t", "http://$t")
+        var last: Exception? = null
+        for (url in candidates) {
+            try {
+                return url to info(url)
+            } catch (e: ApiException) {
+                throw e
+            } catch (e: Exception) {
+                last = e
+            }
+        }
+        throw last as? IOException ?: IOException(last?.message ?: "Sunucuya ulaşılamadı")
+    }
+
     suspend fun authenticate(kind: String, body: LoginRequest): AuthResponse {
         val r = raw("POST", if (kind == "setup") "/setup" else "/auth/login", json.encodeToString(LoginRequest.serializer(), body), AuthResponse.serializer(), auth = false)
         adopt(r)

@@ -1,9 +1,21 @@
-# DOMAIN tanımlıysa Let's Encrypt ile otomatik HTTPS. Yerel deneme için DOMAIN=localhost.
-{$DOMAIN:localhost} {
+# Cam Notlar ön sunucusu. Erişim türü init.sh ile seçilir ve .env üzerinden buraya gelir:
+#
+#   yerel HTTPS : SITE_ADDRESS="https://192.168.1.1"  SITE_TLS="tls internal"  (Caddy'nin kendi kök sertifikası)
+#   HTTP        : SITE_ADDRESS="http://"              SITE_TLS=""
+#   internet    : SITE_ADDRESS="notlar.ornek.com"     SITE_TLS=""             (Let's Encrypt)
+#
+# Konteyner içinde HTTPS 443'te, HTTP 80'de dinler; dışarıdaki port docker-compose.yml'de eşlenir.
+# {$...} değerleri Caddyfile okunmadan önce metin olarak yerine konur (birden çok sözcük olabilir).
+{
+	{$CADDY_GLOBAL}
+}
+
+{$SITE_ADDRESS:https://localhost} {
+	{$SITE_TLS}
 	encode zstd gzip
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy no-referrer
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"

@@ -1,6 +1,7 @@
-# Cam Notlar sunucusu. Kurulum: ./init.sh && docker compose up -d
-# Ardından https://<alan-adı>/yonetim/ adresinden ilk yönetici hesabı oluşturulur.
-# Dışarıya yalnızca Caddy'nin 80/443 portları açılır; veritabanı iç ağda kalır.
+# Cam Notlar sunucusu. Kurulum: ./init.sh && docker compose up -d --build
+# init.sh erişim türünü (yerel HTTPS / HTTP / internet) ve portu sorar, .env'e yazar.
+# Ardından <adres>:<port>/yonetim/ sayfasından ilk yönetici hesabı oluşturulur.
+# Dışarıya yalnızca Caddy'nin tek portu açılır; API ve veritabanı iç ağda kalır.
 name: camnotlar
 
 x-api-env: &api-env
@@ -19,11 +20,15 @@ services:
     image: ${IMAGE_PREFIX:-ghcr.io/camnotlar}/camnotlar-web:${VERSION:-local}
     build: { context: .., target: web }
     restart: unless-stopped
-    ports: ["80:80", "443:443", "443:443/udp"]
+    # Dıştaki PORT → konteynerdeki 443 (HTTPS) ya da 80 (HTTP).
+    ports: ["${PORT:-8080}:${INNER_PORT:-80}"]
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
-      ACME_EMAIL: ${ACME_EMAIL:-}
+      SITE_ADDRESS: ${SITE_ADDRESS:-https://localhost}
+      SITE_TLS: ${SITE_TLS:-}
+      CADDY_GLOBAL: ${CADDY_GLOBAL:-}
     volumes:
+      # Ayar dosyası buradan okunur; değiştirince yalnızca: docker compose restart caddy
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

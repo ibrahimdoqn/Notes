@@ -20,27 +20,62 @@ Kural: hiçbir kaynak dosya 1000 satırı geçmez (`npm run lint:lines`, CI'da d
 
 ## Sunucuyu kurmak (Docker)
 
-Gerekenler: Docker + Compose, alan adının A kaydı sunucuyu göstermeli.
+Gerekenler: Docker ve Docker Compose. `init.sh` erişim türünü, adresi ve portu sorar; Enter'a basarak varsayılanları kabul edebilirsin.
 
 ```bash
 git clone <bu depo> camnotlar && cd camnotlar/deploy
 ```
 
 ```bash
-./init.sh notlar.ornek.com
+./init.sh
+```
+
+```
+Cam Notlar'a nasıl erişilecek?
+  1) Yerel ağ, HTTP   (varsayılan) — IP ve portla bağlanılır, sertifika yok
+  2) Yerel ağ, HTTPS  — Caddy kendi sertifikasını üretir; her cihaza bir kez kök sertifika kurulur
+  3) İnternet         — alan adı ve Let's Encrypt; 443 portu internete açık olmalı
+Seçim [1]:
+Adres [192.168.1.1]:
+Port [8080]:
 ```
 
 ```bash
 docker compose up -d --build
 ```
 
-Sonra tarayıcıda `https://notlar.ornek.com/yonetim/` adresini aç: sunucu boşken bu sayfa **ilk yönetici hesabını** oluşturur. Uygulamalarda kayıt yoktur; tüm kullanıcılar bu yönetim sayfasından **kullanıcı adı ve parola** ile açılır. Aynı sayfadan parola sıfırlanır, yönetici yetkisi verilir ya da kullanıcı silinir. Web uygulaması `https://notlar.ornek.com` adresindedir; Android'de giriş ekranına sunucu adresi, kullanıcı adı ve parola yazılır.
+Sonra tarayıcıda `http://192.168.1.1:8080/yonetim/` adresini aç: sunucu boşken bu sayfa **ilk yönetici hesabını** oluşturur. Uygulamalarda kayıt yoktur; tüm kullanıcılar bu yönetim sayfasından **kullanıcı adı ve parola** ile açılır. Aynı sayfadan parola sıfırlanır, yönetici yetkisi verilir ya da kullanıcı silinir. Web uygulaması `http://192.168.1.1:8080` adresindedir; Android'de giriş ekranına `192.168.1.1:8080`, kullanıcı adı ve parola yazılır.
+
+Adresi ya da portu sonradan değiştirmek için `./init.sh` yeniden çalıştırılır (gizli değerler korunur), ardından `docker compose up -d`. HTTPS seçeneğinde `./sertifika.sh` kök sertifikayı dışa aktarır ve cihazlara nasıl kurulacağını yazar.
 
 Yönetim sayfasına ulaşılamazsa komut satırından da yapılabilir:
 
 ```bash
 docker compose exec api node dist/cli/admin.js reset-password yonetici
 ```
+
+### NanoPi R4S / OpenWrt
+
+- OpenWrt'nin web arayüzü (LuCI) 80 ve 443'ü kullanır; bu yüzden varsayılan port 8080'dir. `init.sh` seçilen port doluysa uyarır.
+- Gerekli paketler: `opkg update && opkg install git-http docker-compose`. `init.sh` busybox kabuğunda çalışır; `openssl` yoksa gizli değerleri Docker içinde üretir. Betikler `docker compose` ve `docker-compose` komutlarının ikisini de tanır.
+- Docker verisini (imajlar, veritabanı, ekler) SD kart/eMMC yerine USB diske koy: LuCI → Docker → Ayarlar → Data root (ör. `/mnt/usb/docker`). Projeyi de aynı diske klonla.
+- İlk derleme R4S'te 10–20 dakika sürer ve 1 GB RAM'li modelde bellek yetmeyebilir. O durumda imajları bilgisayarda derleyip taşı:
+
+```bash
+docker buildx build --platform linux/arm64 --target api -t ghcr.io/camnotlar/camnotlar-api:local --load .
+```
+
+```bash
+docker buildx build --platform linux/arm64 --target web -t ghcr.io/camnotlar/camnotlar-web:local --load .
+```
+
+```bash
+docker save ghcr.io/camnotlar/camnotlar-api:local ghcr.io/camnotlar/camnotlar-web:local | ssh root@192.168.1.1 docker load
+```
+
+  Ardından NanoPi'de `docker compose up -d` (`--build` olmadan).
+- Yerel ağdaki cihazlar yayınlanan porta doğrudan ulaşır; ulaşamazsa LuCI → Ağ → Güvenlik Duvarı'nda `lan` bölgesinden girişin açık olduğunu kontrol et.
+- HTTP modunda tarayıcı "uygulama olarak yükle"yi ve sunucu kapalıyken açılışı desteklemez (güvenli bağlam ister); notlar yine tarayıcıda saklanır ve eşitlenir. Android uygulaması her iki modda da çevrimdışı tam çalışır.
 
 - **Ekler:** dosyalar `attachments` Docker biriminde durur; dosya başına sınır `MAX_ATTACHMENT_MB` (varsayılan 25). Hiçbir notta kullanılmayan ekler bir gün sonra silinir.
 - **Yedekleme:** worker her gece 03:00'te `deploy/backups/` altına `pg_dump` alır (7 günlük + 4 haftalık) ve ek dosyalarını `deploy/backups/attachments/` altına aynalar. Elle yedek: `./backup.sh`. Geri yükleme: `./restore.sh 2026-11-27`.

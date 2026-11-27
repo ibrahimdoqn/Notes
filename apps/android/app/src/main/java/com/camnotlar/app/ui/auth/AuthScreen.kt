@@ -57,19 +57,23 @@ import kotlinx.coroutines.launch
 fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal: () -> Unit, onDone: () -> Unit) {
     val c = Cam.colors
     val scope = rememberCoroutineScope()
-    var server by rememberSaveable { mutableStateOf(vm.lastServer().removePrefix("https://")) }
+    var server by rememberSaveable { mutableStateOf(vm.lastServer()) }
     var username by rememberSaveable { mutableStateOf(vm.session.value?.username ?: "") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(message) }
     var busy by remember { mutableStateOf(false) }
     var needsSetup by remember { mutableStateOf(false) }
+    var resolved by remember { mutableStateOf("") }
 
     // Sunucu adresi değişince kurulmuş mu diye bak (kurulmamışsa yönetim sayfasına yönlendir).
     LaunchedEffect(server) {
         needsSetup = false
         if (server.length < 4) return@LaunchedEffect
         delay(500)
-        vm.serverInfo(server).onSuccess { needsSetup = it.needsSetup }
+        vm.serverInfo(server).onSuccess { (url, info) ->
+            needsSetup = info.needsSetup
+            resolved = url
+        }
     }
 
     Box(Modifier.fillMaxSize().systemBarsPadding().imePadding(), contentAlignment = Alignment.Center) {
@@ -89,7 +93,7 @@ fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal:
                 color = c.sub, fontSize = 14.sp, textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(4.dp))
-            OutlinedTextField(server, { server = it.trim() }, label = { Text("Sunucu") }, placeholder = { Text("notlar.ornek.com") },
+            OutlinedTextField(server, { server = it.trim() }, label = { Text("Sunucu") }, placeholder = { Text("192.168.1.1:8080") },
                 singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
             OutlinedTextField(username, { username = it.trim() }, label = { Text("Kullanıcı adı") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false))
@@ -97,7 +101,7 @@ fun AuthScreen(vm: MainViewModel, fromLocal: Boolean, message: String?, onLocal:
                 visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
             if (needsSetup) {
                 Text(
-                    "Bu sunucu henüz kurulmadı. Tarayıcıda ${ApiClient.normalizeServer(server)}/yonetim/ adresinden yönetici hesabını oluştur.",
+                    "Bu sunucu henüz kurulmadı. Tarayıcıda ${resolved.ifEmpty { ApiClient.normalizeServer(server) }}/yonetim/ adresinden yönetici hesabını oluştur.",
                     color = c.accInk, fontSize = 13.sp, modifier = Modifier.fillMaxWidth(),
                 )
             }

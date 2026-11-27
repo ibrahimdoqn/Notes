@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cam Notlar kendi kurduğun sunucuya bağlanır; adresi kullanıcı girer.
+  - cleartextTrafficPermitted: yerel ağda HTTP ile kurulan sunucu (ör. http://192.168.1.1:8080).
+  - user sertifikaları: yerel HTTPS kurulumunda Caddy'nin kök sertifikası telefona kurulduğunda güvenilir.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
