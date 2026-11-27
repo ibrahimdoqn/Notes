@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/.gradle
+**/build
+apps/android
+deploy/.env
+deploy/backups
+.git
+**/test-results
+**/playwright-report

@@ -16,3 +16,5 @@ apps/android/*.jks
 apps/android/keystore.properties
 .idea/
 *.iml
+deploy/backups/
+.ccr-ca.crt

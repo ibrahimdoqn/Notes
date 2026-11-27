@@ -1,0 +1,71 @@
+# Cam Notlar sunucusu. Kurulum: ./init.sh && docker compose up -d
+# Dışarıya yalnızca Caddy'nin 80/443 portları açılır; veritabanı iç ağda kalır.
+name: camnotlar
+
+x-api-env: &api-env
+  DATABASE_URL: postgres://camnotlar:${POSTGRES_PASSWORD:?init.sh çalıştır}@db:5432/camnotlar
+  JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:?init.sh çalıştır}
+  ALLOW_SIGNUP: ${ALLOW_SIGNUP:-false}
+  HIBP_CHECK: ${HIBP_CHECK:-true}
+  TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
+  SECURE_COOKIES: ${SECURE_COOKIES:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  TZ: ${TZ:-Europe/Istanbul}
+
+services:
+  caddy:
+    image: ${IMAGE_PREFIX:-ghcr.io/camnotlar}/camnotlar-web:${VERSION:-local}
+    build: { context: .., target: web }
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+
+  api:
+    image: ${IMAGE_PREFIX:-ghcr.io/camnotlar}/camnotlar-api:${VERSION:-local}
+    build: { context: .., target: api }
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      db: { condition: service_healthy }
+
+  worker:
+    image: ${IMAGE_PREFIX:-ghcr.io/camnotlar}/camnotlar-api:${VERSION:-local}
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *api-env
+      BACKUP_DIR: /backups
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+    volumes:
+      - ./backups:/backups
+    healthcheck: { disable: true }
+    depends_on:
+      api: { condition: service_healthy }
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: camnotlar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?init.sh çalıştır}
+      POSTGRES_DB: camnotlar
+      TZ: ${TZ:-Europe/Istanbul}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U camnotlar -d camnotlar"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pg_data:
